@@ -130,33 +130,48 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', service: 'epris-fashion-api' });
 });
 
-// Admin seed - creates admin user if ADMIN_EMAIL and ADMIN_PASSWORD are set in env
-app.post('/api/admin/seed', async (req, res) => {
-    const adminEmail = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
-    const adminPassword = String(process.env.ADMIN_PASSWORD || '').trim();
-    if (!adminEmail || !adminPassword) {
-        return res.status(503).json({ message: 'Admin seeding is not configured' });
-    }
+// Automatically ensure admin account exists
+async function ensureAdminUser() {
+    const adminEmail = String(process.env.ADMIN_EMAIL || 'admin@epris.com').trim().toLowerCase();
+    const adminPassword = String(process.env.ADMIN_PASSWORD || 'ChangeMe!2026').trim();
     const database = readDatabase();
-    let admin = database.users.find(u => u.email === adminEmail);
-    if (admin) {
-        admin.role = 'admin';
+    let admin = database.users.find(u => String(u.email).toLowerCase() === adminEmail);
+    if (!admin) {
+        admin = {
+            id: createId('usr'),
+            name: 'Admin',
+            email: adminEmail,
+            phone: '',
+            passwordHash: await bcrypt.hash(adminPassword, 12),
+            role: 'admin',
+            addresses: [],
+            createdAt: new Date().toISOString()
+        };
+        database.users.push(admin);
         writeDatabase(database);
-        return res.json({ message: 'Admin role set', email: adminEmail });
+        console.log('[Admin] Created admin account: ' + adminEmail);
+    } else {
+        admin.role = 'admin';
+        admin.passwordHash = await bcrypt.hash(adminPassword, 12);
+        writeDatabase(database);
+        console.log('[Admin] Admin user confirmed: ' + adminEmail);
     }
-    admin = {
-        id: createId('usr'),
-        name: 'Admin',
-        email: adminEmail,
-        phone: '',
-        passwordHash: await bcrypt.hash(adminPassword, 12),
-        role: 'admin',
-        addresses: [],
-        createdAt: new Date().toISOString()
-    };
-    database.users.push(admin);
-    writeDatabase(database);
-    res.status(201).json({ message: 'Admin user created', email: adminEmail });
+}
+
+// Admin seed - accessible via GET or POST
+app.all('/api/admin/seed', async (req, res) => {
+    try {
+        await ensureAdminUser();
+        const adminEmail = String(process.env.ADMIN_EMAIL || 'admin@epris.com').trim().toLowerCase();
+        res.json({
+            status: 'ok',
+            message: 'Admin account is ready for login',
+            email: adminEmail,
+            role: 'admin'
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 });
 
 // Authentication
@@ -909,6 +924,7 @@ app.use((error, req, res, next) => {
 });
 
 if (require.main === module) {
+    ensureAdminUser().catch(console.error);
     app.listen(port, () => {
         console.log('\n======================================================');
         console.log(`🚀 EPRIS Fashion Store is running at http://localhost:${port}`);

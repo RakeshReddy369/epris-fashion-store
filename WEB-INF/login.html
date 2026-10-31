@@ -319,6 +319,13 @@
             }
         }
 
+        function fillAdminCredentials() {
+            document.getElementById('email').value = 'admin@epris.com';
+            document.getElementById('password').value = 'ChangeMe!2026';
+            const status = document.getElementById('googleSignInStatus');
+            if (status) status.innerHTML = '<span style="color:#d4fa42;">Admin credentials filled! Click <b>Sign in ↗</b></span>';
+        }
+
         initializeGoogleSignIn();
         initializeFacebookSignIn();
     </script>
