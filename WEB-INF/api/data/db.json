@@ -69,7 +69,7 @@
       "name": "Admin",
       "email": "admin@epris.com",
       "phone": "",
-      "passwordHash": "$2a$12$C6Deilh5QQt8uExh5wL0h.8olto3swBZn4LNlpRgYGYkbygQXT9Ju",
+      "passwordHash": "$2a$12$PCjWoMrOC3WUTlY38OADguQ1tDHLFRH.SXEDsH1VKwJeioWHV2rhC",
       "role": "admin",
       "addresses": [],
       "createdAt": "2026-10-31T08:53:00.036Z"

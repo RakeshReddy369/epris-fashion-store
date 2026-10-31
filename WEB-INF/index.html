@@ -30,7 +30,7 @@
             </ul>
 
             <div class="nav-icons">
-                <button onclick="searchProduct()">🔍</button>
+                <button onclick="focusCatalogSearch()" title="Search catalog">🔍</button>
                 <button onclick="showCart()">🛒</button>
                 <button onclick="login()">👤</button>
             </div>
@@ -103,90 +103,59 @@
     </section>
 
 
-    <!-- New Arrivals -->
-    <section class="products" id="new">
+    <!-- Storefront Catalog Section with Live Search & Filters -->
+    <section class="products" id="catalog">
+        <div class="catalog-header">
+            <p class="section-kicker">CURATED COLLECTION 2026</p>
+            <h2>OUR CATALOG</h2>
 
-        <h2>NEW ARRIVALS</h2>
-
-        <div class="product-container">
-
-            <div class="product-card">
-
-                <div class="product-image product1">
-                    <span>NEW</span>
+            <!-- Controls: Search Bar & Sort Dropdown -->
+            <div class="catalog-controls">
+                <div class="catalog-search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="catalogSearchInput" placeholder="Search jackets, t-shirts, sneakers..." oninput="handleSearchInput(event)">
+                    <button type="button" id="clearSearchBtn" class="clear-btn" onclick="clearCatalogSearch()" style="display:none;" title="Clear search">&times;</button>
                 </div>
 
-                <div class="product-info">
-                    <h3><a href="product-detail.html?id=1">Premium Casual T-Shirt</a></h3>
-                    <p>Premium Cotton</p>
-                    <h4>₹1,299</h4>
-
-                    <button onclick="viewProduct(1)">
-                        VIEW DETAILS
-                    </button>
+                <div class="catalog-sort-wrap">
+                    <label for="catalogSortSelect">Sort by:</label>
+                    <select id="catalogSortSelect" onchange="handleSortChange(event)">
+                        <option value="featured">Featured</option>
+                        <option value="price-asc">Price: Low to High</option>
+                        <option value="price-desc">Price: High to Low</option>
+                        <option value="rating">Highest Rated ★</option>
+                        <option value="newest">Newest Arrivals</option>
+                    </select>
                 </div>
-
             </div>
 
-
-            <div class="product-card">
-
-                <div class="product-image product2">
-                    <span>NEW</span>
-                </div>
-
-                <div class="product-info">
-                    <h3><a href="product-detail.html?id=3">Denim Jacket</a></h3>
-                    <p>Premium Denim</p>
-                    <h4>₹1,799</h4>
-
-                    <button onclick="viewProduct(3)">
-                        VIEW DETAILS
-                    </button>
-                </div>
-
+            <!-- Category Filter Tabs -->
+            <div class="catalog-category-tabs">
+                <button class="cat-pill active" data-category="all" onclick="filterCategory('all')">All Products</button>
+                <button class="cat-pill" data-category="Men" onclick="filterCategory('Men')">Men</button>
+                <button class="cat-pill" data-category="Women" onclick="filterCategory('Women')">Women</button>
+                <button class="cat-pill" data-category="Shoes" onclick="filterCategory('Shoes')">Shoes & Footwear</button>
+                <button class="cat-pill" data-category="new" onclick="filterCategory('new')">✨ New Arrivals</button>
             </div>
 
-
-            <div class="product-card">
-
-                <div class="product-image product3">
-                    <span>NEW</span>
-                </div>
-
-                <div class="product-info">
-                    <h3><a href="product-detail.html?id=9">Classic Sneakers</a></h3>
-                    <p>Everyday Comfort</p>
-                    <h4>₹1,999</h4>
-
-                    <button onclick="viewProduct(9)">
-                        VIEW DETAILS
-                    </button>
-                </div>
-
+            <div class="catalog-results-info">
+                <span id="resultsCount">Loading products...</span>
+                <span id="activeFilterBadge" style="display:none; color:#111; font-weight:600;"></span>
             </div>
-
-
-            <div class="product-card">
-
-                <div class="product-image product4">
-                    <span>NEW</span>
-                </div>
-
-                <div class="product-info">
-                    <h3><a href="product-detail.html?id=5">Premium Hoodie</a></h3>
-                    <p>Soft Fleece</p>
-                    <h4>₹1,499</h4>
-
-                    <button onclick="viewProduct(5)">
-                        VIEW DETAILS
-                    </button>
-                </div>
-
-            </div>
-
         </div>
 
+        <!-- Dynamic Product Container -->
+        <div class="product-container" id="productGrid">
+            <!-- Rendered dynamically via script.js -->
+        </div>
+
+        <!-- Empty state -->
+        <div id="noResultsState" style="display:none; text-align:center; padding:60px 20px; background:#fff; border-radius:8px; margin-top:20px;">
+            <div style="font-size:42px; margin-bottom:12px;">🔍</div>
+            <h3 style="font-size:20px; margin-bottom:8px; color:#111;">No matching products found</h3>
+            <p style="color:#64748b; margin-bottom:20px; font-size:14px;">Try searching for a different term or resetting category filters.</p>
+            <button type="button" onclick="resetFilters()" style="background:#111; color:#fff; border:none; padding:10px 24px; border-radius:4px; font-size:13px; font-weight:600; cursor:pointer;">Reset All Filters</button>
+        </div>
     </section>
 
 
@@ -247,6 +216,7 @@
     </footer>
 
 
+    <script src="api-client.js"></script>
     <script src="script.js"></script>
 
 </body>
