@@ -901,7 +901,9 @@ app.get('/api/orders', authenticate, (req, res) => {
 
 app.get('/api/orders/:id', authenticate, (req, res) => {
     const database = readDatabase();
-    const order = database.orders.find(candidate => candidate.id === req.params.id && candidate.userId === req.userId);
+    const currentUser = database.users.find(u => u.id === req.userId);
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    const order = database.orders.find(candidate => candidate.id === req.params.id && (isAdmin || candidate.userId === req.userId));
     if (!order) return res.status(404).json({ message: 'Order not found' });
     res.json({ order });
 });

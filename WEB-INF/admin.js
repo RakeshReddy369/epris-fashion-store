@@ -1,244 +1,469 @@
+/**
+ * EPRIS Fashion Store - Admin Dashboard Logic
+ * Full management of catalog, stock, customer orders, promotions, and tax invoices.
+ */
+
 let adminProducts = [];
 let adminOrders = [];
+let adminCoupons = [];
+
+// Export to window so inline onclick handlers always find them
+window.adminProducts = adminProducts;
+window.adminOrders = adminOrders;
+window.adminCoupons = adminCoupons;
 
 function showAdminMessage(message, isError = false) {
     const element = document.getElementById('adminMessage');
+    if (!element) return;
     element.textContent = message;
     element.className = `admin-message ${isError ? 'error' : 'visible'}`;
-    setTimeout(() => { element.textContent = ''; element.className = 'admin-message'; }, 4000);
+    setTimeout(() => {
+        element.textContent = '';
+        element.className = 'admin-message';
+    }, 4000);
 }
 
 function money(value) {
     return `₹${Number(value || 0).toLocaleString('en-IN')}`;
 }
 
+/* ==========================================================================
+   1. PRODUCTS & INVENTORY
+   ========================================================================== */
 async function loadProducts() {
-    const data = await apiRequest('/admin/products');
-    adminProducts = data.products;
-    document.getElementById('productCount').textContent = adminProducts.length;
-    document.getElementById('productsTable').innerHTML = adminProducts.map(product => `
-        <tr><td><div class="product-cell"><img src="${product.image}" alt=""><strong>${product.name}</strong></div></td><td>${product.category}</td><td>${money(product.price)}</td><td><span class="stock ${product.inventory < 10 ? 'low' : ''}">${product.inventory} units</span></td><td><button class="table-action" onclick="editProduct(${product.id})">Edit</button><button class="table-action danger" onclick="deleteProduct(${product.id})">Delete</button></td></tr>
-    `).join('');
+    try {
+        const data = await apiRequest('/admin/products');
+        adminProducts = data.products || [];
+        window.adminProducts = adminProducts;
+
+        const countEl = document.getElementById('productCount');
+        if (countEl) countEl.textContent = adminProducts.length;
+
+        const tbody = document.getElementById('productsTable');
+        if (!tbody) return;
+
+        if (adminProducts.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:#64748b;">No products in catalog yet.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = adminProducts.map(product => `
+            <tr>
+                <td>
+                    <div class="product-cell">
+                        <img src="${product.image || 'assets/images/placeholder.svg'}" alt="${product.name}">
+                        <strong>${product.name}</strong>
+                    </div>
+                </td>
+                <td>${product.category}</td>
+                <td>${money(product.price)}</td>
+                <td><span class="stock ${product.inventory < 10 ? 'low' : ''}">${product.inventory} units</span></td>
+                <td>
+                    <button class="table-action" onclick="editProduct(${product.id})">Edit</button>
+                    <button class="table-action danger" onclick="deleteProduct(${product.id})">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        showAdminMessage(err.message, true);
+    }
 }
 
-async function loadOrders() {
-    const data = await apiRequest('/admin/orders');
-    adminOrders = data.orders || [];
-    document.getElementById('orderCount').textContent = adminOrders.length;
-    document.getElementById('revenueTotal').textContent = money(adminOrders.reduce((total, order) => total + (order.total || 0), 0));
-    
-    const tbody = document.getElementById('ordersTable');
-    if (!tbody) return;
+function openProductForm(product = null) {
+    const titleEl = document.getElementById('productDialogTitle');
+    if (titleEl) titleEl.textContent = product ? 'Edit product' : 'Add product';
 
-    if (adminOrders.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">No customer orders placed yet.</td></tr>';
-        return;
+    document.getElementById('productId').value = product?.id || '';
+    document.getElementById('productName').value = product?.name || '';
+    document.getElementById('productCategory').value = product?.category || '';
+    document.getElementById('productPrice').value = product?.price || '';
+    document.getElementById('productOriginalPrice').value = product?.originalPrice || '';
+    document.getElementById('productInventory').value = product?.inventory ?? 0;
+    document.getElementById('productImage').value = product?.image || '';
+    document.getElementById('productDescription').value = product?.description || '';
+
+    const dialog = document.getElementById('productDialog');
+    if (dialog) {
+        if (typeof dialog.showModal === 'function') {
+            try {
+                if (dialog.open) dialog.close();
+                dialog.showModal();
+            } catch (e) {
+                dialog.setAttribute('open', '');
+                dialog.style.display = 'block';
+            }
+        } else {
+            dialog.setAttribute('open', '');
+            dialog.style.display = 'block';
+        }
     }
+}
 
-    tbody.innerHTML = adminOrders.map(order => {
-        const orderDate = new Date(order.createdAt || order.date || Date.now()).toLocaleDateString('en-IN', {
-            day: '2-digit', month: 'short', year: 'numeric'
+function closeProductForm() {
+    const dialog = document.getElementById('productDialog');
+    if (dialog) {
+        if (typeof dialog.close === 'function') {
+            try { dialog.close(); } catch (e) {}
+        }
+        dialog.removeAttribute('open');
+        dialog.style.display = 'none';
+    }
+}
+
+function editProduct(productId) {
+    const prod = adminProducts.find(product => String(product.id) === String(productId));
+    if (prod) openProductForm(prod);
+}
+
+async function saveProduct(event) {
+    event.preventDefault();
+    const id = document.getElementById('productId').value;
+    const product = {
+        name: document.getElementById('productName').value,
+        category: document.getElementById('productCategory').value,
+        price: Number(document.getElementById('productPrice').value),
+        originalPrice: Number(document.getElementById('productOriginalPrice').value),
+        inventory: Number(document.getElementById('productInventory').value),
+        image: document.getElementById('productImage').value,
+        description: document.getElementById('productDescription').value
+    };
+    try {
+        await apiRequest(id ? `/admin/products/${id}` : '/admin/products', {
+            method: id ? 'PATCH' : 'POST',
+            body: JSON.stringify(product)
         });
-        const orderTime = new Date(order.createdAt || order.date || Date.now()).toLocaleTimeString('en-IN', {
-            hour: '2-digit', minute: '2-digit'
-        });
+        closeProductForm();
+        showAdminMessage('Product saved successfully.');
+        await loadProducts();
+    } catch (error) {
+        showAdminMessage(error.message, true);
+    }
+}
 
-        const custName = order.customer?.name || order.address?.name || 'Customer';
-        const custEmail = order.customer?.email || '';
-        const custPhone = order.customer?.phone || order.address?.phone || '';
-        const custCity = order.address ? `${order.address.city}, ${order.address.state || ''}` : '';
+async function deleteProduct(productId) {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+    try {
+        await apiRequest(`/admin/products/${productId}`, { method: 'DELETE' });
+        showAdminMessage('Product deleted.');
+        await loadProducts();
+    } catch (error) {
+        showAdminMessage(error.message, true);
+    }
+}
 
-        // Render booked products chips with images, size, color, qty
-        const items = order.items && order.items.length ? order.items : [];
-        const itemsHTML = items.map(item => `
-            <div class="booked-item-chip">
-                <img src="${item.image || 'assets/images/placeholder.svg'}" class="booked-item-thumb" alt="${item.name}">
-                <div class="booked-item-info">
-                    <strong class="booked-item-name" title="${item.name}">${item.name}</strong>
-                    <div class="booked-item-meta">
-                        <span class="booked-qty">Qty: <b>${item.quantity || 1}</b></span>
-                        ${item.size ? `<span class="booked-attr">Size: ${item.size}</span>` : ''}
-                        ${item.color ? `<span class="booked-attr">Color: ${item.color}</span>` : ''}
-                        <span class="booked-price">${money(item.price)}</span>
+/* ==========================================================================
+   2. ORDERS & FULFILLMENT (WITH BOOKED PRODUCTS BREAKDOWN & INVOICES)
+   ========================================================================== */
+async function loadOrders() {
+    try {
+        const data = await apiRequest('/admin/orders');
+        adminOrders = data.orders || [];
+        window.adminOrders = adminOrders;
+
+        const countEl = document.getElementById('orderCount');
+        if (countEl) countEl.textContent = adminOrders.length;
+
+        const revEl = document.getElementById('revenueTotal');
+        if (revEl) {
+            revEl.textContent = money(adminOrders.reduce((total, order) => total + (order.total || 0), 0));
+        }
+
+        const tbody = document.getElementById('ordersTable');
+        if (!tbody) return;
+
+        if (adminOrders.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">No customer orders placed yet.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = adminOrders.map(order => {
+            const orderDate = new Date(order.createdAt || order.date || Date.now()).toLocaleDateString('en-IN', {
+                day: '2-digit', month: 'short', year: 'numeric'
+            });
+            const orderTime = new Date(order.createdAt || order.date || Date.now()).toLocaleTimeString('en-IN', {
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            const custName = order.customer?.name || order.address?.name || 'Customer';
+            const custEmail = order.customer?.email || '';
+            const custPhone = order.customer?.phone || order.address?.phone || '';
+            const custCity = order.address ? `${order.address.city}, ${order.address.state || ''}` : '';
+
+            // Render booked products chips with images, size, color, qty
+            const items = order.items && order.items.length ? order.items : [];
+            const itemsHTML = items.map(item => `
+                <div class="booked-item-chip">
+                    <img src="${item.image || 'assets/images/placeholder.svg'}" class="booked-item-thumb" alt="${item.name}">
+                    <div class="booked-item-info">
+                        <strong class="booked-item-name" title="${item.name}">${item.name}</strong>
+                        <div class="booked-item-meta">
+                            <span class="booked-qty">Qty: <b>${item.quantity || 1}</b></span>
+                            ${item.size ? `<span class="booked-attr">Size: ${item.size}</span>` : ''}
+                            ${item.color ? `<span class="booked-attr">Color: ${item.color}</span>` : ''}
+                            <span class="booked-price">${money(item.price)}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `).join('') || '<span style="color:#94a3b8;font-size:12px;">No items</span>';
+            `).join('') || '<span style="color:#94a3b8;font-size:12px;">No items</span>';
 
-        const paymentType = typeof order.payment === 'object' && order.payment ? (order.payment.type || 'cod') : (order.payment || 'cod');
-        const paymentStatus = typeof order.payment === 'object' && order.payment ? (order.payment.status || 'pending') : 'pending';
+            const paymentType = typeof order.payment === 'object' && order.payment ? (order.payment.type || 'cod') : (order.payment || 'cod');
+            const paymentStatus = typeof order.payment === 'object' && order.payment ? (order.payment.status || 'pending') : 'pending';
 
-        return `
-            <tr>
-                <td>
-                    <strong style="font-family:monospace; font-size:12px;">#${order.id}</strong>
-                    <small>📅 ${orderDate} at ${orderTime}</small>
-                </td>
-                <td>
-                    <strong style="color:#0f172a;">${custName}</strong>
-                    ${custEmail ? `<small>✉️ ${custEmail}</small>` : ''}
-                    ${custPhone ? `<small>📞 +91 ${custPhone}</small>` : ''}
-                    ${custCity ? `<small>📍 ${custCity}</small>` : ''}
-                </td>
-                <td>
-                    <div class="booked-items-list">
-                        ${itemsHTML}
-                    </div>
-                </td>
-                <td>
-                    <strong style="font-size:15px; color:#0f172a;">${money(order.total)}</strong>
-                    ${order.discount ? `<small style="color:#16a34a;">-${money(order.discount)} (${order.coupon || 'PROMO'})</small>` : ''}
-                </td>
-                <td>
-                    <span style="text-transform:uppercase; font-size:11px; font-weight:700;">${paymentType}</span>
-                    <small><span class="stock ${paymentStatus === 'paid' ? '' : 'low'}">${paymentStatus.toUpperCase()}</span></small>
-                </td>
-                <td>
-                    <select onchange="updateOrderStatus('${order.id}', this.value)" style="font-weight:600;">
-                        ${['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded', 'Payment Failed'].map(st => `
-                            <option value="${st}" ${st === order.status ? 'selected' : ''}>${st}</option>
-                        `).join('')}
-                    </select>
-                </td>
-                <td>
-                    <button class="table-action" onclick="viewOrderDetail('${order.id}')" title="View customer order breakdown">🔍 Details</button>
-                    <button class="table-action" onclick="openAdminInvoice('${order.id}')" title="View and print tax invoice">🖨️ Invoice</button>
-                </td>
-            </tr>
-        `;
-    }).join('');
+            return `
+                <tr>
+                    <td>
+                        <strong style="font-family:monospace; font-size:12px;">#${order.id}</strong>
+                        <small>📅 ${orderDate} at ${orderTime}</small>
+                    </td>
+                    <td>
+                        <strong style="color:#0f172a;">${custName}</strong>
+                        ${custEmail ? `<small>✉️ ${custEmail}</small>` : ''}
+                        ${custPhone ? `<small>📞 +91 ${custPhone}</small>` : ''}
+                        ${custCity ? `<small>📍 ${custCity}</small>` : ''}
+                    </td>
+                    <td>
+                        <div class="booked-items-list">
+                            ${itemsHTML}
+                        </div>
+                    </td>
+                    <td>
+                        <strong style="font-size:15px; color:#0f172a;">${money(order.total)}</strong>
+                        ${order.discount ? `<small style="color:#16a34a;">-${money(order.discount)} (${order.coupon || 'PROMO'})</small>` : ''}
+                    </td>
+                    <td>
+                        <span style="text-transform:uppercase; font-size:11px; font-weight:700;">${paymentType}</span>
+                        <small><span class="stock ${paymentStatus === 'paid' ? '' : 'low'}">${paymentStatus.toUpperCase()}</span></small>
+                    </td>
+                    <td>
+                        <select onchange="updateOrderStatus('${order.id}', this.value)" style="font-weight:600;">
+                            ${['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded', 'Payment Failed'].map(st => `
+                                <option value="${st}" ${st === order.status ? 'selected' : ''}>${st}</option>
+                            `).join('')}
+                        </select>
+                    </td>
+                    <td>
+                        <button class="table-action" onclick="viewOrderDetail('${order.id}')" title="View customer order breakdown">🔍 Details</button>
+                        <button class="table-action" onclick="openAdminInvoice('${order.id}')" title="View and print tax invoice">🖨️ Invoice</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (err) {
+        showAdminMessage(err.message, true);
+    }
 }
 
-async function loadCustomers() {
-    const data = await apiRequest('/admin/customers');
-    const customers = data.customers || [];
-    document.getElementById('customerCount').textContent = customers.length;
-    
-    const tbody = document.getElementById('customersTable');
-    if (!tbody) return;
+async function viewOrderDetail(orderId) {
+    let order = (adminOrders || []).find(o => String(o.id) === String(orderId));
+    if (!order && window.adminOrders) {
+        order = window.adminOrders.find(o => String(o.id) === String(orderId));
+    }
 
-    if (customers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#64748b;">No registered customers yet.</td></tr>';
+    if (!order) {
+        try {
+            const data = await apiRequest('/orders/' + encodeURIComponent(orderId));
+            if (data && data.order) order = data.order;
+        } catch (e) {
+            console.warn('Direct order fetch error:', e);
+        }
+    }
+
+    if (!order) {
+        alert('Order #' + orderId + ' details could not be loaded.');
         return;
     }
 
-    tbody.innerHTML = customers.map(customer => {
-        const joinedDate = new Date(customer.createdAt || Date.now()).toLocaleDateString('en-IN', {
-            day: '2-digit', month: 'short', year: 'numeric'
-        });
-
-        // Booked products summary pills
-        const booked = customer.bookedProducts || [];
-        const bookedHTML = booked.length ? booked.map(bp => `
-            <span class="cust-prod-pill"><b>${bp.quantity}x</b> ${bp.name}</span>
-        `).join('') : '<span style="color:#94a3b8; font-size:12px;">No orders placed yet</span>';
-
-        return `
-            <tr>
-                <td><strong>${customer.name}</strong><small>${customer.role === 'admin' ? '🛡️ Admin' : '👤 Customer'}</small></td>
-                <td>${customer.email}<small>${customer.phone ? '📞 +91 ' + customer.phone : 'No phone'}</small></td>
-                <td>
-                    <div class="customer-products-summary">
-                        ${bookedHTML}
-                    </div>
-                </td>
-                <td><strong>${customer.orderCount} orders</strong></td>
-                <td><strong>${money(customer.totalSpent)}</strong></td>
-                <td><small>${joinedDate}</small></td>
-            </tr>
-        `;
-    }).join('');
-}
-
-function viewOrderDetail(orderId) {
-    const order = adminOrders.find(o => o.id === orderId);
-    if (!order) return;
-    document.getElementById('orderDetailTitle').textContent = `Order #${order.id}`;
+    const titleEl = document.getElementById('orderDetailTitle');
+    if (titleEl) titleEl.textContent = `Order #${order.id}`;
 
     const items = order.items || [];
-    const itemsRows = items.map((it, idx) => `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #f1f5f9;">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <img src="${it.image || 'assets/images/placeholder.svg'}" style="width:40px; height:50px; object-fit:cover; border-radius:4px; background:#eee;">
+    const itemsRows = items.map((it) => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #f1f5f9;">
+            <div style="display:flex; align-items:center; gap:14px;">
+                <img src="${it.image || 'assets/images/placeholder.svg'}" alt="${it.name}" style="width:48px; height:58px; object-fit:cover; border-radius:6px; background:#f1f5f9; border:1px solid #e2e8f0;">
                 <div>
-                    <strong>${it.name}</strong>
-                    <div style="font-size:12px; color:#64748b;">
-                        ${it.size ? `Size: <b>${it.size}</b> | ` : ''}
-                        ${it.color ? `Color: <b>${it.color}</b> | ` : ''}
-                        Qty: <b>${it.quantity || 1}</b>
+                    <strong style="color:#0f172a; font-size:14px;">${it.name}</strong>
+                    <div style="font-size:12px; color:#64748b; margin-top:2px;">
+                        ${it.size ? `Size: <b style="color:#0f172a;">${it.size}</b> | ` : ''}
+                        ${it.color ? `Color: <b style="color:#0f172a;">${it.color}</b> | ` : ''}
+                        Quantity: <b style="color:#0f172a;">${it.quantity || 1}</b> × ${money(it.price || 0)}
                     </div>
                 </div>
             </div>
-            <strong>${money((it.price || 0) * (it.quantity || 1))}</strong>
+            <strong style="font-size:14px; color:#0f172a;">${money((it.price || 0) * (it.quantity || 1))}</strong>
         </div>
     `).join('');
 
     const addr = order.address || {};
     const detailHTML = `
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px; background:#f8fafc; padding:14px; border-radius:6px; font-size:13px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; background:#f8fafc; padding:16px; border-radius:8px; font-size:13px; border:1px solid #e2e8f0;">
             <div>
-                <p style="margin:0 0 4px; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Customer & Delivery Address</p>
-                <strong>${addr.name || order.customer?.name || 'Customer'}</strong><br>
+                <p style="margin:0 0 6px; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Customer & Delivery Address</p>
+                <strong style="font-size:14px; color:#0f172a;">${addr.name || order.customer?.name || 'Customer'}</strong><br>
                 ${addr.street ? `${addr.street}<br>` : ''}
                 ${addr.city ? `${addr.city}, ${addr.state || ''} ${addr.zip || ''}<br>` : ''}
-                ${addr.phone ? `Phone: +91 ${addr.phone}<br>` : ''}
-                Email: ${order.customer?.email || 'N/A'}
+                ${addr.phone ? `Phone: <b>+91 ${addr.phone}</b><br>` : ''}
+                Email: <b>${order.customer?.email || 'N/A'}</b>
             </div>
             <div>
-                <p style="margin:0 0 4px; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Order Summary</p>
-                Status: <strong>${order.status}</strong><br>
-                Payment: <strong>${(order.payment?.type || 'COD').toUpperCase()}</strong> (${order.payment?.status || 'pending'})<br>
+                <p style="margin:0 0 6px; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Order Summary</p>
+                Status: <strong style="color:#0f172a;">${order.status}</strong><br>
+                Payment: <strong style="text-transform:uppercase;">${(order.payment?.type || 'COD')}</strong> (${order.payment?.status || 'pending'})<br>
                 Subtotal: ${money(order.subtotal || 0)}<br>
-                ${order.discount ? `<span style="color:#16a34a;">Discount: -${money(order.discount)}<br></span>` : ''}
-                Tax: ${money(order.tax || 0)} | Delivery: ${money(order.shipping || 0)}<br>
-                <strong style="font-size:14px; color:#0f172a;">Grand Total: ${money(order.total)}</strong>
+                ${order.discount ? `<span style="color:#16a34a;">Promo Discount: -${money(order.discount)} (${order.coupon || 'PROMO'})<br></span>` : ''}
+                GST (CGST+SGST): ${money(order.tax || 0)} | Shipping: ${money(order.shipping || 0)}<br>
+                <div style="margin-top:6px; padding-top:6px; border-top:1px dashed #cbd5e1;">
+                    <strong style="font-size:15px; color:#0f172a;">Grand Total: ${money(order.total)}</strong>
+                </div>
             </div>
         </div>
 
-        <h4 style="margin:0 0 10px; font-size:13px; text-transform:uppercase; color:#64748b;">Booked Products (${items.length})</h4>
-        <div>${itemsRows || '<p>No items in this order.</p>'}</div>
+        <h4 style="margin:0 0 12px; font-size:12px; text-transform:uppercase; color:#64748b; letter-spacing:0.5px;">Booked Products (${items.length})</h4>
+        <div style="max-height:300px; overflow-y:auto;">${itemsRows || '<p style="color:#94a3b8;">No items in this order.</p>'}</div>
     `;
 
     document.getElementById('orderDetailContent').innerHTML = detailHTML;
-    document.getElementById('orderDetailPrintBtn').onclick = function() {
+    document.getElementById('orderDetailPrintBtn').onclick = function () {
         openAdminInvoice(order.id);
     };
-    document.getElementById('orderDetailDialog').showModal();
+
+    const dialog = document.getElementById('orderDetailDialog');
+    if (dialog) {
+        if (typeof dialog.showModal === 'function') {
+            try {
+                if (dialog.open) dialog.close();
+                dialog.showModal();
+            } catch (e) {
+                dialog.setAttribute('open', '');
+                dialog.style.display = 'block';
+            }
+        } else {
+            dialog.setAttribute('open', '');
+            dialog.style.display = 'block';
+        }
+    }
 }
 
 function closeOrderDetail() {
-    document.getElementById('orderDetailDialog').close();
+    const dialog = document.getElementById('orderDetailDialog');
+    if (dialog) {
+        if (typeof dialog.close === 'function') {
+            try { dialog.close(); } catch (e) {}
+        }
+        dialog.removeAttribute('open');
+        dialog.style.display = 'none';
+    }
 }
 
-function openAdminInvoice(orderId) {
-    const order = adminOrders.find(o => o.id === orderId);
-    if (!order) return;
+async function openAdminInvoice(orderId) {
+    let order = (adminOrders || []).find(o => String(o.id) === String(orderId));
+    if (!order && window.adminOrders) {
+        order = window.adminOrders.find(o => String(o.id) === String(orderId));
+    }
+
+    if (!order) {
+        try {
+            const data = await apiRequest('/orders/' + encodeURIComponent(orderId));
+            if (data && data.order) order = data.order;
+        } catch (e) {
+            console.warn('Order invoice fetch error:', e);
+        }
+    }
+
+    if (!order) {
+        alert('Order #' + orderId + ' details could not be found.');
+        return;
+    }
+
     if (typeof EprisInvoice !== 'undefined') {
-        EprisInvoice.openInvoiceModal(order.id);
+        if (typeof EprisInvoice.showModalWithOrder === 'function') {
+            EprisInvoice.showModalWithOrder(order);
+        } else if (typeof EprisInvoice.openInvoiceModal === 'function') {
+            EprisInvoice.openInvoiceModal(order);
+        }
     } else {
-        window.open(`order-confirmation.html?orderId=${encodeURIComponent(order.id)}&print=1`, '_blank');
+        window.open('order-confirmation.html?orderId=' + encodeURIComponent(order.id) + '&print=1', '_blank');
     }
 }
 
 async function updateOrderStatus(orderId, status) {
     try {
-        await apiRequest(`/admin/orders//status`, { method: 'PATCH', body: JSON.stringify({ status }) });
-        showAdminMessage('Order status updated.');
+        await apiRequest(`/admin/orders/${encodeURIComponent(orderId)}/status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status })
+        });
+        showAdminMessage(`Order #${orderId} status updated to ${status}.`);
     } catch (error) {
         showAdminMessage(error.message, true);
         await loadOrders();
     }
 }
 
+/* ==========================================================================
+   3. CUSTOMERS & BOOKED ACTIVITY
+   ========================================================================== */
+async function loadCustomers() {
+    try {
+        const data = await apiRequest('/admin/customers');
+        const customers = data.customers || [];
+        const countEl = document.getElementById('customerCount');
+        if (countEl) countEl.textContent = customers.length;
 
-let adminCoupons = [];
+        const tbody = document.getElementById('customersTable');
+        if (!tbody) return;
 
+        if (customers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#64748b;">No registered customers yet.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = customers.map(customer => {
+            const joinedDate = new Date(customer.createdAt || Date.now()).toLocaleDateString('en-IN', {
+                day: '2-digit', month: 'short', year: 'numeric'
+            });
+
+            const booked = customer.bookedProducts || [];
+            const bookedHTML = booked.length ? booked.map(bp => `
+                <span class="cust-prod-pill"><b>${bp.quantity}x</b> ${bp.name}</span>
+            `).join('') : '<span style="color:#94a3b8; font-size:12px;">No orders placed yet</span>';
+
+            return `
+                <tr>
+                    <td><strong>${customer.name}</strong><small>${customer.role === 'admin' ? '🛡️ Admin' : '👤 Customer'}</small></td>
+                    <td>${customer.email}<small>${customer.phone ? '📞 +91 ' + customer.phone : 'No phone'}</small></td>
+                    <td>
+                        <div class="customer-products-summary">
+                            ${bookedHTML}
+                        </div>
+                    </td>
+                    <td><strong>${customer.orderCount} orders</strong></td>
+                    <td><strong>${money(customer.totalSpent)}</strong></td>
+                    <td><small>${joinedDate}</small></td>
+                </tr>
+            `;
+        }).join('');
+    } catch (err) {
+        showAdminMessage(err.message, true);
+    }
+}
+
+/* ==========================================================================
+   4. PROMO COUPONS
+   ========================================================================== */
 async function loadCoupons() {
     try {
         const data = await apiRequest('/admin/coupons');
         adminCoupons = data.coupons || [];
+        window.adminCoupons = adminCoupons;
+
         const tbody = document.getElementById('couponsTable');
         if (!tbody) return;
+
+        if (adminCoupons.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">No promotional coupons configured.</td></tr>';
+            return;
+        }
+
         tbody.innerHTML = adminCoupons.map(coupon => {
             let discountDisplay = '';
             if (coupon.discountType === 'percentage') {
@@ -250,18 +475,18 @@ async function loadCoupons() {
             }
 
             return `
-            <tr>
-                <td><strong style="color:#d4fa42;letter-spacing:0.5px;">${coupon.code}</strong><small>${coupon.description || ''}</small></td>
-                <td><span style="text-transform:capitalize;">${coupon.discountType}</span></td>
-                <td><strong>${discountDisplay}</strong></td>
-                <td>${coupon.minOrderAmount ? money(coupon.minOrderAmount) : '₹0 (None)'}</td>
-                <td>${coupon.usedCount || 0} times</td>
-                <td><span class="stock ${coupon.isActive ? '' : 'low'}">${coupon.isActive ? 'Active' : 'Disabled'}</span></td>
-                <td>
-                    <button class="table-action" onclick="toggleCoupon('${coupon.code}')">${coupon.isActive ? 'Disable' : 'Enable'}</button>
-                    <button class="table-action danger" onclick="deleteCoupon('${coupon.code}')">Delete</button>
-                </td>
-            </tr>
+                <tr>
+                    <td><strong style="color:#d4fa42;letter-spacing:0.5px;">${coupon.code}</strong><small>${coupon.description || ''}</small></td>
+                    <td><span style="text-transform:capitalize;">${coupon.discountType}</span></td>
+                    <td><strong>${discountDisplay}</strong></td>
+                    <td>${coupon.minOrderAmount ? money(coupon.minOrderAmount) : '₹0 (None)'}</td>
+                    <td>${coupon.usedCount || 0} times</td>
+                    <td><span class="stock ${coupon.isActive ? '' : 'low'}">${coupon.isActive ? 'Active' : 'Disabled'}</span></td>
+                    <td>
+                        <button class="table-action" onclick="toggleCoupon('${coupon.code}')">${coupon.isActive ? 'Disable' : 'Enable'}</button>
+                        <button class="table-action danger" onclick="deleteCoupon('${coupon.code}')">Delete</button>
+                    </td>
+                </tr>
             `;
         }).join('');
     } catch (err) {
@@ -276,11 +501,33 @@ function openCouponForm() {
     document.getElementById('couponMinSpendInput').value = '500';
     document.getElementById('couponMaxDiscountInput').value = '';
     document.getElementById('couponDescriptionInput').value = '';
-    document.getElementById('couponDialog').showModal();
+
+    const dialog = document.getElementById('couponDialog');
+    if (dialog) {
+        if (typeof dialog.showModal === 'function') {
+            try {
+                if (dialog.open) dialog.close();
+                dialog.showModal();
+            } catch (e) {
+                dialog.setAttribute('open', '');
+                dialog.style.display = 'block';
+            }
+        } else {
+            dialog.setAttribute('open', '');
+            dialog.style.display = 'block';
+        }
+    }
 }
 
 function closeCouponForm() {
-    document.getElementById('couponDialog').close();
+    const dialog = document.getElementById('couponDialog');
+    if (dialog) {
+        if (typeof dialog.close === 'function') {
+            try { dialog.close(); } catch (e) {}
+        }
+        dialog.removeAttribute('open');
+        dialog.style.display = 'none';
+    }
 }
 
 async function saveCoupon(event) {
@@ -299,7 +546,7 @@ async function saveCoupon(event) {
             body: JSON.stringify(coupon)
         });
         closeCouponForm();
-        showAdminMessage('Coupon "' + coupon.code + '" created successfully.');
+        showAdminMessage(`Coupon "${coupon.code}" created successfully.`);
         await loadCoupons();
     } catch (err) {
         showAdminMessage(err.message, true);
@@ -317,7 +564,7 @@ async function toggleCoupon(code) {
 }
 
 async function deleteCoupon(code) {
-    if (!confirm('Are you sure you want to delete coupon "' + code + '"?')) return;
+    if (!confirm(`Are you sure you want to delete coupon "${code}"?`)) return;
     try {
         await apiRequest('/admin/coupons/' + encodeURIComponent(code), { method: 'DELETE' });
         showAdminMessage('Coupon deleted.');
@@ -331,7 +578,54 @@ async function logoutAdmin() {
     await logoutUser();
 }
 
+/* ==========================================================================
+   5. EXPORT HANDLERS TO WINDOW OBJECT (PREVENTS INLINE ONCLICK FAILURES)
+   ========================================================================== */
+window.showAdminMessage = showAdminMessage;
+window.money = money;
+
+window.loadProducts = loadProducts;
+window.openProductForm = openProductForm;
+window.closeProductForm = closeProductForm;
+window.editProduct = editProduct;
+window.saveProduct = saveProduct;
+window.deleteProduct = deleteProduct;
+
+window.loadOrders = loadOrders;
+window.viewOrderDetail = viewOrderDetail;
+window.closeOrderDetail = closeOrderDetail;
+window.openAdminInvoice = openAdminInvoice;
+window.updateOrderStatus = updateOrderStatus;
+
+window.loadCustomers = loadCustomers;
+
+window.loadCoupons = loadCoupons;
+window.openCouponForm = openCouponForm;
+window.closeCouponForm = closeCouponForm;
+window.saveCoupon = saveCoupon;
+window.toggleCoupon = toggleCoupon;
+window.deleteCoupon = deleteCoupon;
+
+window.logoutAdmin = logoutAdmin;
+
+/* ==========================================================================
+   6. DOM INITIALIZATION & MODAL BACKDROP HANDLING
+   ========================================================================== */
 document.addEventListener('DOMContentLoaded', async () => {
+    // Backdrop click dismiss for modal dialogs
+    ['orderDetailDialog', 'productDialog', 'couponDialog'].forEach(dialogId => {
+        const dialog = document.getElementById(dialogId);
+        if (dialog) {
+            dialog.addEventListener('click', (e) => {
+                if (e.target === dialog) {
+                    if (dialogId === 'orderDetailDialog') closeOrderDetail();
+                    else if (dialogId === 'productDialog') closeProductForm();
+                    else if (dialogId === 'couponDialog') closeCouponForm();
+                }
+            });
+        }
+    });
+
     try {
         const user = await requireAuthentication('login.html');
         if (!user || user.role !== 'admin') {
@@ -339,14 +633,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.location.href = 'index.html';
             return;
         }
+
+        // Setup tab buttons
         document.querySelectorAll('.admin-tabs button').forEach(button => {
             button.addEventListener('click', () => {
                 document.querySelectorAll('.admin-tabs button, .admin-panel').forEach(element => element.classList.remove('active'));
                 button.classList.add('active');
-                document.getElementById(button.dataset.panel).classList.add('active');
+                const targetPanel = document.getElementById(button.dataset.panel);
+                if (targetPanel) targetPanel.classList.add('active');
             });
         });
-        await Promise.all([loadProducts(), loadOrders(), loadCustomers(), loadCoupons()]);
+
+        // Load all dashboard sections in parallel
+        await Promise.all([
+            loadProducts(),
+            loadOrders(),
+            loadCustomers(),
+            loadCoupons()
+        ]);
     } catch (error) {
         showAdminMessage(error.message, true);
     }

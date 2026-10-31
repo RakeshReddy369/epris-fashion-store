@@ -890,7 +890,11 @@ app.get('/api/orders', authenticate, async (req, res, next) => {
 
 app.get('/api/orders/:id', authenticate, async (req, res, next) => {
     try {
-        const order = await Order.findOne({ id: req.params.id, userId: req.user.id }).lean();
+        const query = { id: req.params.id };
+        if (req.user.role !== 'admin') {
+            query.userId = req.user.id;
+        }
+        const order = await Order.findOne(query).lean();
         if (!order) return res.status(404).json({ message: 'Order not found' });
         res.json({ order });
     } catch (error) {

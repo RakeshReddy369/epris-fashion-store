@@ -614,13 +614,30 @@
         }, 150);
     }
 
-    function openInvoiceModal(orderId) {
-        // Find order from global storage or API
-        const storedOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-        let order = storedOrders.find(o => o.id === orderId);
+    function openInvoiceModal(orderOrId) {
+        // Direct order object support
+        if (typeof orderOrId === 'object' && orderOrId !== null) {
+            return showModalWithOrder(orderOrId);
+        }
 
-        if (!order && window.lastLoadedOrders) {
-            order = window.lastLoadedOrders.find(o => o.id === orderId);
+        const orderId = String(orderOrId || '').trim();
+        if (!orderId) {
+            alert('Order ID is required.');
+            return;
+        }
+
+        // 1. Check local storage
+        const storedOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+        let order = storedOrders.find(o => String(o.id) === orderId);
+
+        // 2. Check profile page memory
+        if (!order && window.lastLoadedOrders && Array.isArray(window.lastLoadedOrders)) {
+            order = window.lastLoadedOrders.find(o => String(o.id) === orderId);
+        }
+
+        // 3. Check admin panel memory
+        if (!order && window.adminOrders && Array.isArray(window.adminOrders)) {
+            order = window.adminOrders.find(o => String(o.id) === orderId);
         }
 
         if (!order) {
@@ -703,6 +720,7 @@
         generateQRSVG,
         generateInvoiceHTML,
         printCurrentInvoice,
+        showModalWithOrder,
         openInvoiceModal,
         closeInvoiceModal,
         formatINR,
