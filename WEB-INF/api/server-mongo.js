@@ -10,7 +10,7 @@ const mongoose = require('mongoose');
 const { OAuth2Client } = require('google-auth-library');
 const Razorpay = require('razorpay');
 const seedProducts = require('./products');
-const { User, Product, Cart, Wishlist, Order, Review } = require('./models');
+const { User, Product, Cart, Wishlist, Order, Review, Coupon } = require('./models');
 const { sendOrderConfirmation, sendOrderStatusUpdate, sendWelcomeEmail } = require('./email');
 const { createRazorpayOrder, verifyRazorpaySignature, keyId: razorpayKeyId } = require('./payment');
 
@@ -683,9 +683,114 @@ app.post('/api/payments/razorpay/verify', authenticate, async (req, res, next) =
 });
 
 // Orders
+
+// MongoDB Coupon Endpoints
+app.post('/api/coupons/validate', async (req, res, next) => {
+    try {
+        const { code = '', subtotal = 0, shipping = 100 } = req.body;
+        const cleanCode = String(code).trim().toUpperCase();
+        if (!cleanCode) return res.status(400).json({ valid: false, message: 'Please enter a coupon code' });
+
+        const coupon = await Coupon.findOne({ code: cleanCode });
+        if (!coupon || !coupon.isActive) {
+            return res.status(404).json({ valid: false, message: 'Coupon "' + cleanCode + '" is invalid or expired' });
+        }
+
+        const orderSubtotal = Number(subtotal) || 0;
+        if (orderSubtotal < (coupon.minOrderAmount || 0)) {
+            return res.status(400).json({
+                valid: false,
+                message: 'Coupon requires a minimum order of ₹' + coupon.minOrderAmount + ' (Current: ₹' + orderSubtotal + ')'
+            });
+        }
+
+        let discountAmount = 0;
+        if (coupon.discountType === 'percentage') {
+            discountAmount = Math.round((orderSubtotal * coupon.discountValue) / 100);
+            if (coupon.maxDiscountAmount) {
+                discountAmount = Math.min(discountAmount, coupon.maxDiscountAmount);
+            }
+        } else if (coupon.discountType === 'flat') {
+            discountAmount = Math.min(coupon.discountValue, orderSubtotal);
+        } else if (coupon.discountType === 'shipping') {
+            discountAmount = Math.min(coupon.discountValue, Number(shipping) || 100);
+        }
+
+        res.json({
+            valid: true,
+            code: coupon.code,
+            discountType: coupon.discountType,
+            discountValue: coupon.discountValue,
+            discountAmount,
+            message: 'Coupon ' + coupon.code + ' applied! You saved ₹' + discountAmount
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.get('/api/admin/coupons', authenticate, requireAdmin, async (req, res, next) => {
+    try {
+        const coupons = await Coupon.find().sort({ createdAt: -1 });
+        res.json({ coupons });
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.post('/api/admin/coupons', authenticate, requireAdmin, async (req, res, next) => {
+    try {
+        const { code, discountType, discountValue, minOrderAmount = 0, maxDiscountAmount = null, description = '' } = req.body;
+        if (!code || !discountType || discountValue === undefined) {
+            return res.status(400).json({ message: 'Code, discount type, and value are required' });
+        }
+        const cleanCode = String(code).trim().toUpperCase();
+        const existing = await Coupon.findOne({ code: cleanCode });
+        if (existing) {
+            return res.status(409).json({ message: 'A coupon with code "' + cleanCode + '" already exists' });
+        }
+
+        const coupon = await Coupon.create({
+            code: cleanCode,
+            discountType,
+            discountValue: Number(discountValue),
+            minOrderAmount: Number(minOrderAmount) || 0,
+            maxDiscountAmount: maxDiscountAmount ? Number(maxDiscountAmount) : null,
+            description: description || cleanCode + ' promo coupon'
+        });
+        res.status(201).json({ coupon });
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.patch('/api/admin/coupons/:code/toggle', authenticate, requireAdmin, async (req, res, next) => {
+    try {
+        const cleanCode = String(req.params.code).trim().toUpperCase();
+        const coupon = await Coupon.findOne({ code: cleanCode });
+        if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
+        coupon.isActive = !coupon.isActive;
+        await coupon.save();
+        res.json({ message: 'Coupon status updated', coupon });
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.delete('/api/admin/coupons/:code', authenticate, requireAdmin, async (req, res, next) => {
+    try {
+        const cleanCode = String(req.params.code).trim().toUpperCase();
+        const deleted = await Coupon.findOneAndDelete({ code: cleanCode });
+        if (!deleted) return res.status(404).json({ message: 'Coupon not found' });
+        res.json({ message: 'Coupon deleted successfully' });
+    } catch (err) {
+        next(err);
+    }
+});
+
 app.post('/api/orders', authenticate, async (req, res, next) => {
     try {
-        const { address, delivery = { type: 'standard', cost: 100 }, payment = { type: 'cod' } } = req.body;
+        const { address, delivery = { type: 'standard', cost: 100 }, payment = { type: 'cod' }, couponCode = '' } = req.body;
         const cart = await getOrCreateCart(req.user.id);
         if (!cart.items.length) return res.status(400).json({ message: 'Cannot place an order with an empty cart' });
         if (!address || !address.name || !address.street || !address.city || !address.state || !address.zip) return res.status(400).json({ message: 'A complete shipping address is required' });
@@ -696,7 +801,9 @@ app.post('/api/orders', authenticate, async (req, res, next) => {
         const order = await Order.create({
             id: createId('ord'), userId: req.user.id, items: cart.items, address,
             delivery: { type: delivery.type, cost: shipping }, payment: { type: payment.type },
-            subtotal, tax, shipping, total: subtotal + tax + shipping, status: 'Pending'
+            subtotal, tax, shipping, discount,
+            couponCode: appliedCode,
+            total: Math.max(0, subtotal - discount + tax + shipping), status: 'Pending'
         });
         cart.items = [];
         await cart.save();

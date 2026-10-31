@@ -509,6 +509,8 @@
             document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('active');
         }
 
+        let appliedCoupon = null;
+
         function updateOrderSummary() {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
             let subtotal = 0;
@@ -517,9 +519,37 @@
                 subtotal += (parseInt(item.price) || 0) * (item.quantity || 1);
             });
 
-            const tax = Math.floor(subtotal * 0.1);
             const delivery = selectedDelivery.cost;
-            const total = subtotal + tax + delivery;
+            let discount = 0;
+
+            if (appliedCoupon) {
+                if (appliedCoupon.discountType === 'percentage') {
+                    discount = Math.round((subtotal * appliedCoupon.discountValue) / 100);
+                    if (appliedCoupon.maxDiscountAmount) {
+                        discount = Math.min(discount, appliedCoupon.maxDiscountAmount);
+                    }
+                } else if (appliedCoupon.discountType === 'flat') {
+                    discount = Math.min(appliedCoupon.discountValue, subtotal);
+                } else if (appliedCoupon.discountType === 'shipping') {
+                    discount = Math.min(appliedCoupon.discountValue, delivery);
+                }
+
+                if (appliedCoupon.minOrderAmount && subtotal < appliedCoupon.minOrderAmount) {
+                    removePromo();
+                    alert('Order subtotal is now below the minimum required for coupon ' + appliedCoupon.code);
+                    return;
+                }
+
+                document.getElementById('sidebarDiscountRow').style.display = 'flex';
+                document.getElementById('sidebarDiscountCode').textContent = appliedCoupon.code;
+                document.getElementById('sidebarDiscount').textContent = '-₹' + discount;
+            } else {
+                const row = document.getElementById('sidebarDiscountRow');
+                if (row) row.style.display = 'none';
+            }
+
+            const tax = Math.floor(Math.max(0, subtotal - discount) * 0.1);
+            const total = Math.max(0, subtotal - discount + tax + delivery);
 
             document.getElementById('sidebarSubtotal').textContent = '₹' + subtotal;
             document.getElementById('sidebarDelivery').textContent = delivery === 0 ? 'FREE' : '₹' + delivery;
@@ -727,7 +757,8 @@
                 const payload = {
                     address,
                     delivery: selectedDelivery,
-                    payment: { type: selectedPayment }
+                    payment: { type: selectedPayment },
+                    couponCode: appliedCoupon ? appliedCoupon.code : ''
                 };
 
                 const data = await apiRequest('/orders', {
@@ -757,20 +788,58 @@
             }
         }
 
-        function applyPromo() {
-            const code = document.getElementById('promoCode').value.trim().toUpperCase();
-            const discounts = {
-                'SAVE10': 0.10,
-                'WELCOME20': 0.20,
-                'SAVE50': 0.50
-            };
+        async function applyPromo() {
+            const input = document.getElementById('promoCode');
+            const code = input.value.trim().toUpperCase();
+            const messageEl = document.getElementById('promoMessage');
 
-            if (discounts[code]) {
-                alert(`Promo code applied! ${(discounts[code] * 100)}% discount`);
-                // Apply discount logic here
-            } else {
-                alert('Invalid promo code');
+            if (!code) {
+                messageEl.innerHTML = '<span style="color:#ef4444;">Please enter a promo code</span>';
+                return;
             }
+
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            let subtotal = 0;
+            cart.forEach(item => {
+                subtotal += (parseInt(item.price) || 0) * (item.quantity || 1);
+            });
+
+            if (!subtotal) {
+                messageEl.innerHTML = '<span style="color:#ef4444;">Your cart is empty</span>';
+                return;
+            }
+
+            try {
+                messageEl.innerHTML = '<span style="color:#64748b;">Checking coupon...</span>';
+                const res = await apiRequest('/coupons/validate', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        code,
+                        subtotal,
+                        shipping: selectedDelivery.cost
+                    })
+                });
+
+                appliedCoupon = res;
+                document.getElementById('promoInputContainer').style.display = 'none';
+                document.getElementById('appliedPromoBadge').style.display = 'flex';
+                document.getElementById('badgeCode').textContent = res.code;
+                document.getElementById('badgeText').textContent = res.message;
+                messageEl.innerHTML = '<span style="color:#16a34a;">✓ ' + res.message + '</span>';
+
+                updateOrderSummary();
+            } catch (err) {
+                messageEl.innerHTML = '<span style="color:#ef4444;">' + err.message + '</span>';
+            }
+        }
+
+        function removePromo() {
+            appliedCoupon = null;
+            document.getElementById('promoInputContainer').style.display = 'flex';
+            document.getElementById('appliedPromoBadge').style.display = 'none';
+            document.getElementById('promoCode').value = '';
+            document.getElementById('promoMessage').innerHTML = 'Popular: <b>WELCOME10</b> (10% off), <b>EPRIS500</b> (₹500 off), or <b>FREESHIP</b>';
+            updateOrderSummary();
         }
     </script>
 </body>

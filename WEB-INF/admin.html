@@ -42,6 +42,7 @@
             <button class="active" data-panel="productsPanel">Products & inventory</button>
             <button data-panel="ordersPanel">Orders</button>
             <button data-panel="customersPanel">Customers</button>
+            <button data-panel="couponsPanel">🎟️ Coupons</button>
         </nav>
 
         <section id="productsPanel" class="admin-panel active">
@@ -57,6 +58,35 @@
         <section id="customersPanel" class="admin-panel">
             <div class="panel-heading"><div><h2>Customers</h2><p>View registered customers and their purchase activity.</p></div><button type="button" class="admin-secondary" onclick="loadCustomers()">Refresh</button></div>
             <div class="admin-table-wrap"><table><thead><tr><th>Customer</th><th>Contact</th><th>Orders</th><th>Total spent</th><th>Joined</th></tr></thead><tbody id="customersTable"></tbody></table></div>
+        </section>
+    
+        <section id="couponsPanel" class="admin-panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Discount Coupons & Promo Codes</h2>
+                    <p>Create, manage, and toggle promo discounts for customer checkout.</p>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button type="button" class="admin-primary" onclick="openCouponForm()">+ Add coupon</button>
+                    <button type="button" class="admin-secondary" onclick="loadCoupons()">Refresh</button>
+                </div>
+            </div>
+            <div class="admin-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Type</th>
+                            <th>Discount</th>
+                            <th>Min Order</th>
+                            <th>Used Count</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="couponsTable"></tbody>
+                </table>
+            </div>
         </section>
     </main>
 
@@ -74,6 +104,46 @@
                 <label class="full-field">Description<textarea id="productDescription" rows="4" required></textarea></label>
             </div>
             <div class="dialog-actions"><button type="button" class="admin-secondary" onclick="closeProductForm()">Cancel</button><button class="admin-primary" type="submit">Save product</button></div>
+        </form>
+    </dialog>
+
+    <dialog id="couponDialog" class="product-dialog">
+        <form method="dialog" id="couponForm" onsubmit="saveCoupon(event)">
+            <div class="dialog-heading">
+                <div>
+                    <p class="admin-kicker">PROMOTION MANAGER</p>
+                    <h2 id="couponDialogTitle">Create Promo Coupon</h2>
+                </div>
+                <button type="button" class="dialog-close" onclick="closeCouponForm()">&times;</button>
+            </div>
+            <div class="admin-form-grid">
+                <label>Coupon Code
+                    <input id="couponCodeInput" placeholder="e.g. SUMMER20" required style="text-transform:uppercase;">
+                </label>
+                <label>Discount Type
+                    <select id="couponTypeInput" required>
+                        <option value="percentage">Percentage Discount (%)</option>
+                        <option value="flat">Flat Amount Discount (₹)</option>
+                        <option value="shipping">Free Delivery / Shipping</option>
+                    </select>
+                </label>
+                <label>Discount Value
+                    <input id="couponValueInput" type="number" min="1" placeholder="e.g. 10 for 10% or 500 for ₹500" required>
+                </label>
+                <label>Minimum Order (INR)
+                    <input id="couponMinSpendInput" type="number" min="0" placeholder="e.g. 500" value="0">
+                </label>
+                <label>Max Discount (optional for %)
+                    <input id="couponMaxDiscountInput" type="number" min="0" placeholder="e.g. 1000">
+                </label>
+                <label class="full-field">Description
+                    <input id="couponDescriptionInput" placeholder="e.g. 20% off summer collection">
+                </label>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="admin-secondary" onclick="closeCouponForm()">Cancel</button>
+                <button class="admin-primary" type="submit">Save Coupon</button>
+            </div>
         </form>
     </dialog>
 </body>

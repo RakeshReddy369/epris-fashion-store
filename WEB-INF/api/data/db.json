@@ -94,6 +94,24 @@
     {
       "userId": "usr_1788718558800_jdpku9",
       "items": []
+    },
+    {
+      "userId": "usr_1793474527515_rsebbu",
+      "items": [
+        {
+          "productId": 1,
+          "name": "Premium Casual T-Shirt",
+          "price": 1299,
+          "image": "assets/images/product-1.svg",
+          "color": "Black",
+          "size": "M",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "userId": "usr_1793474547765_sw30z9",
+      "items": []
     }
   ],
   "wishlists": [
@@ -521,6 +539,48 @@
       "inventory": 30,
       "freeTrial": true,
       "fitNote": "Slim modern dress cut with spread collar."
+    }
+  ],
+  "coupons": [
+    {
+      "code": "WELCOME10",
+      "discountType": "percentage",
+      "discountValue": 10,
+      "minOrderAmount": 500,
+      "maxDiscountAmount": 1000,
+      "isActive": true,
+      "usedCount": 1,
+      "description": "10% off on orders above ₹500"
+    },
+    {
+      "code": "EPRIS500",
+      "discountType": "flat",
+      "discountValue": 500,
+      "minOrderAmount": 2000,
+      "maxDiscountAmount": null,
+      "isActive": true,
+      "usedCount": 0,
+      "description": "Flat ₹500 off on orders above ₹2,000"
+    },
+    {
+      "code": "FREESHIP",
+      "discountType": "shipping",
+      "discountValue": 100,
+      "minOrderAmount": 1000,
+      "maxDiscountAmount": null,
+      "isActive": true,
+      "usedCount": 0,
+      "description": "Free Delivery on orders above ₹1,000"
+    },
+    {
+      "code": "FESTIVE25",
+      "discountType": "percentage",
+      "discountValue": 25,
+      "minOrderAmount": 2500,
+      "maxDiscountAmount": 2000,
+      "isActive": true,
+      "usedCount": 0,
+      "description": "25% festive discount on orders above ₹2,500"
     }
   ]
 }

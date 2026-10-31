@@ -103,6 +103,103 @@ async function updateOrderStatus(orderId, status) {
     }
 }
 
+
+let adminCoupons = [];
+
+async function loadCoupons() {
+    try {
+        const data = await apiRequest('/admin/coupons');
+        adminCoupons = data.coupons || [];
+        const tbody = document.getElementById('couponsTable');
+        if (!tbody) return;
+        tbody.innerHTML = adminCoupons.map(coupon => {
+            let discountDisplay = '';
+            if (coupon.discountType === 'percentage') {
+                discountDisplay = `${coupon.discountValue}% OFF`;
+            } else if (coupon.discountType === 'shipping') {
+                discountDisplay = 'FREE DELIVERY';
+            } else {
+                discountDisplay = money(coupon.discountValue) + ' FLAT';
+            }
+
+            return `
+            <tr>
+                <td><strong style="color:#d4fa42;letter-spacing:0.5px;">${coupon.code}</strong><small>${coupon.description || ''}</small></td>
+                <td><span style="text-transform:capitalize;">${coupon.discountType}</span></td>
+                <td><strong>${discountDisplay}</strong></td>
+                <td>${coupon.minOrderAmount ? money(coupon.minOrderAmount) : '₹0 (None)'}</td>
+                <td>${coupon.usedCount || 0} times</td>
+                <td><span class="stock ${coupon.isActive ? '' : 'low'}">${coupon.isActive ? 'Active' : 'Disabled'}</span></td>
+                <td>
+                    <button class="table-action" onclick="toggleCoupon('${coupon.code}')">${coupon.isActive ? 'Disable' : 'Enable'}</button>
+                    <button class="table-action danger" onclick="deleteCoupon('${coupon.code}')">Delete</button>
+                </td>
+            </tr>
+            `;
+        }).join('');
+    } catch (err) {
+        showAdminMessage(err.message, true);
+    }
+}
+
+function openCouponForm() {
+    document.getElementById('couponCodeInput').value = '';
+    document.getElementById('couponTypeInput').value = 'percentage';
+    document.getElementById('couponValueInput').value = '10';
+    document.getElementById('couponMinSpendInput').value = '500';
+    document.getElementById('couponMaxDiscountInput').value = '';
+    document.getElementById('couponDescriptionInput').value = '';
+    document.getElementById('couponDialog').showModal();
+}
+
+function closeCouponForm() {
+    document.getElementById('couponDialog').close();
+}
+
+async function saveCoupon(event) {
+    event.preventDefault();
+    const coupon = {
+        code: document.getElementById('couponCodeInput').value.trim().toUpperCase(),
+        discountType: document.getElementById('couponTypeInput').value,
+        discountValue: Number(document.getElementById('couponValueInput').value),
+        minOrderAmount: Number(document.getElementById('couponMinSpendInput').value) || 0,
+        maxDiscountAmount: document.getElementById('couponMaxDiscountInput').value ? Number(document.getElementById('couponMaxDiscountInput').value) : null,
+        description: document.getElementById('couponDescriptionInput').value.trim()
+    };
+    try {
+        await apiRequest('/admin/coupons', {
+            method: 'POST',
+            body: JSON.stringify(coupon)
+        });
+        closeCouponForm();
+        showAdminMessage('Coupon "' + coupon.code + '" created successfully.');
+        await loadCoupons();
+    } catch (err) {
+        showAdminMessage(err.message, true);
+    }
+}
+
+async function toggleCoupon(code) {
+    try {
+        await apiRequest('/admin/coupons/' + encodeURIComponent(code) + '/toggle', { method: 'PATCH' });
+        showAdminMessage('Coupon status updated.');
+        await loadCoupons();
+    } catch (err) {
+        showAdminMessage(err.message, true);
+    }
+}
+
+async function deleteCoupon(code) {
+    if (!confirm('Are you sure you want to delete coupon "' + code + '"?')) return;
+    try {
+        await apiRequest('/admin/coupons/' + encodeURIComponent(code), { method: 'DELETE' });
+        showAdminMessage('Coupon deleted.');
+        await loadCoupons();
+    } catch (err) {
+        showAdminMessage(err.message, true);
+    }
+}
+
 async function logoutAdmin() {
     await logoutUser();
 }
@@ -122,7 +219,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById(button.dataset.panel).classList.add('active');
             });
         });
-        await Promise.all([loadProducts(), loadOrders(), loadCustomers()]);
+        await Promise.all([loadProducts(), loadOrders(), loadCustomers(), loadCoupons()]);
     } catch (error) {
         showAdminMessage(error.message, true);
     }

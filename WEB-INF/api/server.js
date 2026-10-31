@@ -115,7 +115,9 @@ function buildOrderFromCart(database, userId, address, delivery, payment) {
         subtotal,
         tax,
         shipping,
-        total: subtotal + tax + shipping,
+        discount,
+        couponCode: appliedCode,
+        total: Math.max(0, subtotal - discount + tax + shipping),
         status: 'Pending',
         createdAt: new Date().toISOString()
     };
@@ -674,9 +676,133 @@ app.delete('/api/addresses/:addressId', authenticate, (req, res) => {
     res.json({ addresses: user.addresses });
 });
 
+
+// Default coupons
+const defaultCoupons = [
+    { code: 'WELCOME10', discountType: 'percentage', discountValue: 10, minOrderAmount: 500, maxDiscountAmount: 1000, isActive: true, usedCount: 0, description: '10% off on orders above ₹500' },
+    { code: 'EPRIS500', discountType: 'flat', discountValue: 500, minOrderAmount: 2000, maxDiscountAmount: null, isActive: true, usedCount: 0, description: 'Flat ₹500 off on orders above ₹2,000' },
+    { code: 'FREESHIP', discountType: 'shipping', discountValue: 100, minOrderAmount: 1000, maxDiscountAmount: null, isActive: true, usedCount: 0, description: 'Free Delivery on orders above ₹1,000' },
+    { code: 'FESTIVE25', discountType: 'percentage', discountValue: 25, minOrderAmount: 2500, maxDiscountAmount: 2000, isActive: true, usedCount: 0, description: '25% festive discount on orders above ₹2,500' }
+];
+
+function getCoupons(database) {
+    if (!database.coupons) {
+        database.coupons = [...defaultCoupons];
+        writeDatabase(database);
+    }
+    return database.coupons;
+}
+
+// Public: Validate Coupon
+app.post('/api/coupons/validate', (req, res) => {
+    const { code = '', subtotal = 0, shipping = 100 } = req.body;
+    const cleanCode = String(code).trim().toUpperCase();
+    if (!cleanCode) return res.status(400).json({ valid: false, message: 'Please enter a coupon code' });
+
+    const database = readDatabase();
+    const coupons = getCoupons(database);
+    const coupon = coupons.find(c => c.code.toUpperCase() === cleanCode);
+
+    if (!coupon || !coupon.isActive) {
+        return res.status(404).json({ valid: false, message: 'Coupon "' + cleanCode + '" is invalid or expired' });
+    }
+
+    const orderSubtotal = Number(subtotal) || 0;
+    if (orderSubtotal < (coupon.minOrderAmount || 0)) {
+        return res.status(400).json({
+            valid: false,
+            message: 'Coupon requires a minimum order of ₹' + coupon.minOrderAmount + ' (Current: ₹' + orderSubtotal + ')'
+        });
+    }
+
+    let discountAmount = 0;
+    if (coupon.discountType === 'percentage') {
+        discountAmount = Math.round((orderSubtotal * coupon.discountValue) / 100);
+        if (coupon.maxDiscountAmount) {
+            discountAmount = Math.min(discountAmount, coupon.maxDiscountAmount);
+        }
+    } else if (coupon.discountType === 'flat') {
+        discountAmount = Math.min(coupon.discountValue, orderSubtotal);
+    } else if (coupon.discountType === 'shipping') {
+        discountAmount = Math.min(coupon.discountValue, Number(shipping) || 100);
+    }
+
+    res.json({
+        valid: true,
+        code: coupon.code,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+        discountAmount,
+        message: 'Coupon ' + coupon.code + ' applied! You saved ₹' + discountAmount
+    });
+});
+
+// Admin: Get all coupons
+app.get('/api/admin/coupons', authenticate, requireAdmin, (req, res) => {
+    const database = readDatabase();
+    res.json({ coupons: getCoupons(database) });
+});
+
+// Admin: Create new coupon
+app.post('/api/admin/coupons', authenticate, requireAdmin, (req, res) => {
+    const { code, discountType, discountValue, minOrderAmount = 0, maxDiscountAmount = null, description = '' } = req.body;
+    if (!code || !discountType || discountValue === undefined) {
+        return res.status(400).json({ message: 'Code, discount type, and value are required' });
+    }
+    const cleanCode = String(code).trim().toUpperCase();
+    const database = readDatabase();
+    const coupons = getCoupons(database);
+
+    if (coupons.some(c => c.code.toUpperCase() === cleanCode)) {
+        return res.status(409).json({ message: 'A coupon with code "' + cleanCode + '" already exists' });
+    }
+
+    const newCoupon = {
+        code: cleanCode,
+        discountType,
+        discountValue: Number(discountValue),
+        minOrderAmount: Number(minOrderAmount) || 0,
+        maxDiscountAmount: maxDiscountAmount ? Number(maxDiscountAmount) : null,
+        isActive: true,
+        usedCount: 0,
+        description: description || `${cleanCode} promo coupon`,
+        createdAt: new Date().toISOString()
+    };
+    coupons.push(newCoupon);
+    writeDatabase(database);
+    res.status(201).json({ coupon: newCoupon });
+});
+
+// Admin: Toggle coupon active/disabled
+app.patch('/api/admin/coupons/:code/toggle', authenticate, requireAdmin, (req, res) => {
+    const cleanCode = String(req.params.code).trim().toUpperCase();
+    const database = readDatabase();
+    const coupons = getCoupons(database);
+    const coupon = coupons.find(c => c.code.toUpperCase() === cleanCode);
+    if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
+
+    coupon.isActive = !coupon.isActive;
+    writeDatabase(database);
+    res.json({ message: 'Coupon status updated', coupon });
+});
+
+// Admin: Delete coupon
+app.delete('/api/admin/coupons/:code', authenticate, requireAdmin, (req, res) => {
+    const cleanCode = String(req.params.code).trim().toUpperCase();
+    const database = readDatabase();
+    const coupons = getCoupons(database);
+    const initialLen = coupons.length;
+    database.coupons = coupons.filter(c => c.code.toUpperCase() !== cleanCode);
+    if (database.coupons.length === initialLen) {
+        return res.status(404).json({ message: 'Coupon not found' });
+    }
+    writeDatabase(database);
+    res.json({ message: 'Coupon deleted successfully' });
+});
+
 // Orders
 app.post('/api/orders', authenticate, (req, res) => {
-    const { address, delivery = { type: 'standard', cost: 100 }, payment = { type: 'cod' } } = req.body;
+    const { address, delivery = { type: 'standard', cost: 100 }, payment = { type: 'cod' }, couponCode = '' } = req.body;
     const database = readDatabase();
     const cart = getCart(database, req.userId);
 
@@ -686,8 +812,28 @@ app.post('/api/orders', authenticate, (req, res) => {
     }
 
     const subtotal = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
-    const shipping = Number(delivery.cost) || 0;
+    let shipping = Number(delivery.cost) || 0;
     const tax = Math.round(subtotal * 0.1);
+    let discount = 0;
+    let appliedCode = '';
+
+    if (couponCode) {
+        const coupons = getCoupons(database);
+        const cp = coupons.find(c => c.code.toUpperCase() === String(couponCode).trim().toUpperCase() && c.isActive);
+        if (cp && subtotal >= (cp.minOrderAmount || 0)) {
+            appliedCode = cp.code;
+            if (cp.discountType === 'percentage') {
+                discount = Math.round((subtotal * cp.discountValue) / 100);
+                if (cp.maxDiscountAmount) discount = Math.min(discount, cp.maxDiscountAmount);
+            } else if (cp.discountType === 'flat') {
+                discount = Math.min(cp.discountValue, subtotal);
+            } else if (cp.discountType === 'shipping') {
+                discount = Math.min(cp.discountValue, shipping);
+            }
+            cp.usedCount = (cp.usedCount || 0) + 1;
+        }
+    }
+
     const order = {
         id: createId('ord'),
         userId: req.userId,
@@ -698,7 +844,9 @@ app.post('/api/orders', authenticate, (req, res) => {
         subtotal,
         tax,
         shipping,
-        total: subtotal + tax + shipping,
+        discount,
+        couponCode: appliedCode,
+        total: Math.max(0, subtotal - discount + tax + shipping),
         status: 'Pending',
         createdAt: new Date().toISOString()
     };
