@@ -1,6 +1,6 @@
 'use strict';
 
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
@@ -12,7 +12,7 @@ const dbJsonPath = path.join(__dirname, 'data', 'db.json');
 
 async function migrate() {
     console.log('🔄 Connecting to MongoDB at:', mongoUri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:****@'));
-    await mongoose.connect(mongoUri);
+    await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 8000 });
     console.log('✅ Connected to MongoDB successfully.\n');
 
     if (!fs.existsSync(dbJsonPath)) {
