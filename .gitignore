@@ -27,3 +27,6 @@ desktop.ini
 *.swp
 *.swo
 
+
+# Scratch / test directory
+scratch/

@@ -272,6 +272,7 @@
 
     <script src="api-client.js"></script>
     <script src="script.js"></script>
+    <script src="invoice.js"></script>
     <script>
         // Initialize profile page
         window.addEventListener('load', async function() {
@@ -333,8 +334,23 @@
         }
 
         async function loadUserOrders() {
-            const data = await apiRequest('/orders');
-            const orders = data.orders || [];
+            let orders = [];
+            try {
+                const data = await apiRequest('/orders');
+                if (data && data.orders) orders = data.orders;
+            } catch (err) {
+                console.warn('API loadUserOrders fallback to local storage:', err.message);
+            }
+
+            if (!orders || orders.length === 0) {
+                orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+            }
+
+            window.lastLoadedOrders = orders;
+            displayUserOrders(orders);
+        }
+
+        function displayUserOrders(orders) {
             const recentOrders = document.getElementById('recentOrders');
             const ordersContent = document.getElementById('ordersContent');
             
@@ -383,6 +399,7 @@
                         </div>
 
                         <div class="order-card-actions">
+                            <button type="button" class="order-invoice-btn" onclick="EprisInvoice.openInvoiceModal('${order.id}')">🖨️ Print Invoice</button>
                             <a class="order-track-link" href="order-confirmation.html?orderId=${order.id}">View Details & Receipt →</a>
                         </div>
                     </div>

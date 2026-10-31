@@ -49,7 +49,8 @@ function runMinification() {
         'script.js',
         'api-client.js',
         'interactive-features.js',
-        'admin.js'
+        'admin.js',
+        'invoice.js'
     ];
 
     let totalOriginal = 0;

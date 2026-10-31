@@ -100,8 +100,22 @@
                 </div>
 
                 <div class="confirmation-actions">
+                    <button class="btn-action btn-print-invoice" onclick="printConfirmationInvoice()">🖨️ Print / Save PDF Invoice</button>
                     <button class="btn-action primary" onclick="window.location.href='profile.html'">View My Orders</button>
                     <button class="btn-action secondary" onclick="window.location.href='index.html'">Continue Shopping</button>
+                </div>
+
+                <div class="confirmation-card invoice-preview-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                        <h2 style="margin:0;">Tax Invoice & Receipt</h2>
+                        <button class="btn-print-link" onclick="printConfirmationInvoice()">🖨️ Print / Download PDF</button>
+                    </div>
+                    <p style="color:#64748b; font-size:13px; margin-bottom:16px;">
+                        Official GST Tax Invoice with digital QR verification code. Formatted for high-resolution A4 printing and PDF export.
+                    </p>
+                    <div id="inlineInvoiceWrapper" class="inline-invoice-wrapper">
+                        <!-- Dynamic invoice will be rendered here -->
+                    </div>
                 </div>
 
                 <div class="order-tracking">
@@ -152,6 +166,7 @@
 
     <script src="api-client.js"></script>
     <script src="script.js"></script>
+    <script src="invoice.js"></script>
     <script>
         window.addEventListener('load', async function() {
             await loadOrderConfirmation();
@@ -190,6 +205,30 @@
             }
 
             displayOrderDetails(order);
+
+            // Store current order globally for print
+            window.currentConfirmedOrder = order;
+
+            // Render branded tax invoice with QR code
+            if (typeof EprisInvoice !== 'undefined') {
+                const invoiceHtml = EprisInvoice.generateInvoiceHTML(order);
+                const wrapper = document.getElementById('inlineInvoiceWrapper');
+                if (wrapper) wrapper.innerHTML = invoiceHtml;
+            }
+
+            // Auto-trigger print if ?print=1 or ?print=true in URL
+            if (params.get('print') === '1' || params.get('print') === 'true') {
+                setTimeout(printConfirmationInvoice, 400);
+            }
+        }
+
+        function printConfirmationInvoice() {
+            if (!window.currentConfirmedOrder) return;
+            if (typeof EprisInvoice !== 'undefined') {
+                EprisInvoice.printCurrentInvoice(window.currentConfirmedOrder);
+            } else {
+                window.print();
+            }
         }
 
         function displayOrderDetails(order) {
