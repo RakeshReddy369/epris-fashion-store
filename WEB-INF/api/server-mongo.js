@@ -523,16 +523,42 @@ app.get('/api/admin/customers', authenticate, requireAdmin, async (req, res, nex
     try {
         const customers = await User.find({ role: 'customer' }).select('-passwordHash').sort({ createdAt: -1 }).lean();
         const customerIds = customers.map(customer => customer.id);
-        const orderCounts = await Order.aggregate([
-            { $match: { userId: { $in: customerIds } } },
-            { $group: { _id: '$userId', orderCount: { $sum: 1 }, totalSpent: { $sum: '$total' } } }
-        ]);
-        const stats = new Map(orderCounts.map(item => [item._id, item]));
-        res.json({ customers: customers.map(customer => ({
-            ...customer,
-            orderCount: stats.get(customer.id)?.orderCount || 0,
-            totalSpent: stats.get(customer.id)?.totalSpent || 0
-        })) });
+        const allOrders = await Order.find({ userId: { $in: customerIds } }).lean();
+
+        const statsByUser = new Map();
+        const bookedByUser = new Map();
+
+        allOrders.forEach(order => {
+            const uid = order.userId;
+            const current = statsByUser.get(uid) || { orderCount: 0, totalSpent: 0 };
+            current.orderCount += 1;
+            current.totalSpent += (order.total || 0);
+            statsByUser.set(uid, current);
+
+            if (!bookedByUser.has(uid)) bookedByUser.set(uid, new Map());
+            const userMap = bookedByUser.get(uid);
+            (order.items || []).forEach(item => {
+                const count = userMap.get(item.name) || 0;
+                userMap.set(item.name, count + (item.quantity || 1));
+            });
+        });
+
+        res.json({
+            customers: customers.map(customer => {
+                const stats = statsByUser.get(customer.id) || { orderCount: 0, totalSpent: 0 };
+                const userMap = bookedByUser.get(customer.id);
+                const bookedProducts = [];
+                if (userMap) {
+                    userMap.forEach((qty, name) => bookedProducts.push({ name, quantity: qty }));
+                }
+                return {
+                    ...customer,
+                    orderCount: stats.orderCount,
+                    totalSpent: stats.totalSpent,
+                    bookedProducts
+                };
+            })
+        });
     } catch (error) {
         next(error);
     }

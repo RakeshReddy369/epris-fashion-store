@@ -23,79 +23,206 @@ async function loadProducts() {
 
 async function loadOrders() {
     const data = await apiRequest('/admin/orders');
-    adminOrders = data.orders;
+    adminOrders = data.orders || [];
     document.getElementById('orderCount').textContent = adminOrders.length;
-    document.getElementById('revenueTotal').textContent = money(adminOrders.reduce((total, order) => total + order.total, 0));
-    document.getElementById('ordersTable').innerHTML = adminOrders.map(order => `
-        <tr><td><strong>${order.id}</strong><small>${new Date(order.createdAt).toLocaleDateString()}</small></td><td>${order.customer?.name || 'Unknown'}<small>${order.customer?.email || ''}</small></td><td>${money(order.total)}</td><td>${order.payment.type} <small>${order.payment.status}</small></td><td><select onchange="updateOrderStatus('${order.id}', this.value)">${['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded', 'Payment Failed'].map(status => `<option ${status === order.status ? 'selected' : ''}>${status}</option>`).join('')}</select></td></tr>
-    `).join('');
+    document.getElementById('revenueTotal').textContent = money(adminOrders.reduce((total, order) => total + (order.total || 0), 0));
+    
+    const tbody = document.getElementById('ordersTable');
+    if (!tbody) return;
+
+    if (adminOrders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">No customer orders placed yet.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = adminOrders.map(order => {
+        const orderDate = new Date(order.createdAt || order.date || Date.now()).toLocaleDateString('en-IN', {
+            day: '2-digit', month: 'short', year: 'numeric'
+        });
+        const orderTime = new Date(order.createdAt || order.date || Date.now()).toLocaleTimeString('en-IN', {
+            hour: '2-digit', minute: '2-digit'
+        });
+
+        const custName = order.customer?.name || order.address?.name || 'Customer';
+        const custEmail = order.customer?.email || '';
+        const custPhone = order.customer?.phone || order.address?.phone || '';
+        const custCity = order.address ? `${order.address.city}, ${order.address.state || ''}` : '';
+
+        // Render booked products chips with images, size, color, qty
+        const items = order.items && order.items.length ? order.items : [];
+        const itemsHTML = items.map(item => `
+            <div class="booked-item-chip">
+                <img src="${item.image || 'assets/images/placeholder.svg'}" class="booked-item-thumb" alt="${item.name}">
+                <div class="booked-item-info">
+                    <strong class="booked-item-name" title="${item.name}">${item.name}</strong>
+                    <div class="booked-item-meta">
+                        <span class="booked-qty">Qty: <b>${item.quantity || 1}</b></span>
+                        ${item.size ? `<span class="booked-attr">Size: ${item.size}</span>` : ''}
+                        ${item.color ? `<span class="booked-attr">Color: ${item.color}</span>` : ''}
+                        <span class="booked-price">${money(item.price)}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('') || '<span style="color:#94a3b8;font-size:12px;">No items</span>';
+
+        const paymentType = typeof order.payment === 'object' && order.payment ? (order.payment.type || 'cod') : (order.payment || 'cod');
+        const paymentStatus = typeof order.payment === 'object' && order.payment ? (order.payment.status || 'pending') : 'pending';
+
+        return `
+            <tr>
+                <td>
+                    <strong style="font-family:monospace; font-size:12px;">#${order.id}</strong>
+                    <small>📅 ${orderDate} at ${orderTime}</small>
+                </td>
+                <td>
+                    <strong style="color:#0f172a;">${custName}</strong>
+                    ${custEmail ? `<small>✉️ ${custEmail}</small>` : ''}
+                    ${custPhone ? `<small>📞 +91 ${custPhone}</small>` : ''}
+                    ${custCity ? `<small>📍 ${custCity}</small>` : ''}
+                </td>
+                <td>
+                    <div class="booked-items-list">
+                        ${itemsHTML}
+                    </div>
+                </td>
+                <td>
+                    <strong style="font-size:15px; color:#0f172a;">${money(order.total)}</strong>
+                    ${order.discount ? `<small style="color:#16a34a;">-${money(order.discount)} (${order.coupon || 'PROMO'})</small>` : ''}
+                </td>
+                <td>
+                    <span style="text-transform:uppercase; font-size:11px; font-weight:700;">${paymentType}</span>
+                    <small><span class="stock ${paymentStatus === 'paid' ? '' : 'low'}">${paymentStatus.toUpperCase()}</span></small>
+                </td>
+                <td>
+                    <select onchange="updateOrderStatus('${order.id}', this.value)" style="font-weight:600;">
+                        ${['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded', 'Payment Failed'].map(st => `
+                            <option value="${st}" ${st === order.status ? 'selected' : ''}>${st}</option>
+                        `).join('')}
+                    </select>
+                </td>
+                <td>
+                    <button class="table-action" onclick="viewOrderDetail('${order.id}')" title="View customer order breakdown">🔍 Details</button>
+                    <button class="table-action" onclick="openAdminInvoice('${order.id}')" title="View and print tax invoice">🖨️ Invoice</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 
 async function loadCustomers() {
     const data = await apiRequest('/admin/customers');
-    document.getElementById('customerCount').textContent = data.customers.length;
-    document.getElementById('customersTable').innerHTML = data.customers.map(customer => `
-        <tr><td><strong>${customer.name}</strong></td><td>${customer.email}<small>${customer.phone || 'No phone'}</small></td><td>${customer.orderCount}</td><td>${money(customer.totalSpent)}</td><td>${new Date(customer.createdAt).toLocaleDateString()}</td></tr>
-    `).join('');
-}
+    const customers = data.customers || [];
+    document.getElementById('customerCount').textContent = customers.length;
+    
+    const tbody = document.getElementById('customersTable');
+    if (!tbody) return;
 
-function openProductForm(product = null) {
-    document.getElementById('productDialogTitle').textContent = product ? 'Edit product' : 'Add product';
-    document.getElementById('productId').value = product?.id || '';
-    document.getElementById('productName').value = product?.name || '';
-    document.getElementById('productCategory').value = product?.category || '';
-    document.getElementById('productPrice').value = product?.price || '';
-    document.getElementById('productOriginalPrice').value = product?.originalPrice || '';
-    document.getElementById('productInventory').value = product?.inventory ?? 0;
-    document.getElementById('productImage').value = product?.image || '';
-    document.getElementById('productDescription').value = product?.description || '';
-    document.getElementById('productDialog').showModal();
-}
-
-function closeProductForm() {
-    document.getElementById('productDialog').close();
-}
-
-function editProduct(productId) {
-    openProductForm(adminProducts.find(product => product.id === productId));
-}
-
-async function saveProduct(event) {
-    event.preventDefault();
-    const id = document.getElementById('productId').value;
-    const product = {
-        name: document.getElementById('productName').value,
-        category: document.getElementById('productCategory').value,
-        price: Number(document.getElementById('productPrice').value),
-        originalPrice: Number(document.getElementById('productOriginalPrice').value),
-        inventory: Number(document.getElementById('productInventory').value),
-        image: document.getElementById('productImage').value,
-        description: document.getElementById('productDescription').value
-    };
-    try {
-        await apiRequest(id ? `/admin/products/${id}` : '/admin/products', { method: id ? 'PATCH' : 'POST', body: JSON.stringify(product) });
-        closeProductForm();
-        showAdminMessage('Product saved successfully.');
-        await loadProducts();
-    } catch (error) {
-        showAdminMessage(error.message, true);
+    if (customers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#64748b;">No registered customers yet.</td></tr>';
+        return;
     }
+
+    tbody.innerHTML = customers.map(customer => {
+        const joinedDate = new Date(customer.createdAt || Date.now()).toLocaleDateString('en-IN', {
+            day: '2-digit', month: 'short', year: 'numeric'
+        });
+
+        // Booked products summary pills
+        const booked = customer.bookedProducts || [];
+        const bookedHTML = booked.length ? booked.map(bp => `
+            <span class="cust-prod-pill"><b>${bp.quantity}x</b> ${bp.name}</span>
+        `).join('') : '<span style="color:#94a3b8; font-size:12px;">No orders placed yet</span>';
+
+        return `
+            <tr>
+                <td><strong>${customer.name}</strong><small>${customer.role === 'admin' ? '🛡️ Admin' : '👤 Customer'}</small></td>
+                <td>${customer.email}<small>${customer.phone ? '📞 +91 ' + customer.phone : 'No phone'}</small></td>
+                <td>
+                    <div class="customer-products-summary">
+                        ${bookedHTML}
+                    </div>
+                </td>
+                <td><strong>${customer.orderCount} orders</strong></td>
+                <td><strong>${money(customer.totalSpent)}</strong></td>
+                <td><small>${joinedDate}</small></td>
+            </tr>
+        `;
+    }).join('');
 }
 
-async function deleteProduct(productId) {
-    if (!confirm('Delete this product?')) return;
-    try {
-        await apiRequest(`/admin/products/${productId}`, { method: 'DELETE' });
-        showAdminMessage('Product deleted.');
-        await loadProducts();
-    } catch (error) {
-        showAdminMessage(error.message, true);
+function viewOrderDetail(orderId) {
+    const order = adminOrders.find(o => o.id === orderId);
+    if (!order) return;
+    document.getElementById('orderDetailTitle').textContent = `Order #${order.id}`;
+
+    const items = order.items || [];
+    const itemsRows = items.map((it, idx) => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #f1f5f9;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="${it.image || 'assets/images/placeholder.svg'}" style="width:40px; height:50px; object-fit:cover; border-radius:4px; background:#eee;">
+                <div>
+                    <strong>${it.name}</strong>
+                    <div style="font-size:12px; color:#64748b;">
+                        ${it.size ? `Size: <b>${it.size}</b> | ` : ''}
+                        ${it.color ? `Color: <b>${it.color}</b> | ` : ''}
+                        Qty: <b>${it.quantity || 1}</b>
+                    </div>
+                </div>
+            </div>
+            <strong>${money((it.price || 0) * (it.quantity || 1))}</strong>
+        </div>
+    `).join('');
+
+    const addr = order.address || {};
+    const detailHTML = `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px; background:#f8fafc; padding:14px; border-radius:6px; font-size:13px;">
+            <div>
+                <p style="margin:0 0 4px; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Customer & Delivery Address</p>
+                <strong>${addr.name || order.customer?.name || 'Customer'}</strong><br>
+                ${addr.street ? `${addr.street}<br>` : ''}
+                ${addr.city ? `${addr.city}, ${addr.state || ''} ${addr.zip || ''}<br>` : ''}
+                ${addr.phone ? `Phone: +91 ${addr.phone}<br>` : ''}
+                Email: ${order.customer?.email || 'N/A'}
+            </div>
+            <div>
+                <p style="margin:0 0 4px; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Order Summary</p>
+                Status: <strong>${order.status}</strong><br>
+                Payment: <strong>${(order.payment?.type || 'COD').toUpperCase()}</strong> (${order.payment?.status || 'pending'})<br>
+                Subtotal: ${money(order.subtotal || 0)}<br>
+                ${order.discount ? `<span style="color:#16a34a;">Discount: -${money(order.discount)}<br></span>` : ''}
+                Tax: ${money(order.tax || 0)} | Delivery: ${money(order.shipping || 0)}<br>
+                <strong style="font-size:14px; color:#0f172a;">Grand Total: ${money(order.total)}</strong>
+            </div>
+        </div>
+
+        <h4 style="margin:0 0 10px; font-size:13px; text-transform:uppercase; color:#64748b;">Booked Products (${items.length})</h4>
+        <div>${itemsRows || '<p>No items in this order.</p>'}</div>
+    `;
+
+    document.getElementById('orderDetailContent').innerHTML = detailHTML;
+    document.getElementById('orderDetailPrintBtn').onclick = function() {
+        openAdminInvoice(order.id);
+    };
+    document.getElementById('orderDetailDialog').showModal();
+}
+
+function closeOrderDetail() {
+    document.getElementById('orderDetailDialog').close();
+}
+
+function openAdminInvoice(orderId) {
+    const order = adminOrders.find(o => o.id === orderId);
+    if (!order) return;
+    if (typeof EprisInvoice !== 'undefined') {
+        EprisInvoice.openInvoiceModal(order.id);
+    } else {
+        window.open(`order-confirmation.html?orderId=${encodeURIComponent(order.id)}&print=1`, '_blank');
     }
 }
 
 async function updateOrderStatus(orderId, status) {
     try {
-        await apiRequest(`/admin/orders/${orderId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+        await apiRequest(`/admin/orders//status`, { method: 'PATCH', body: JSON.stringify({ status }) });
         showAdminMessage('Order status updated.');
     } catch (error) {
         showAdminMessage(error.message, true);

@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="admin.css">
     <script src="api-client.js"></script>
+    <script src="invoice.js"></script>
     <script src="admin.js" defer></script>
 </head>
 <body class="admin-page">
@@ -52,12 +53,12 @@
 
         <section id="ordersPanel" class="admin-panel">
             <div class="panel-heading"><div><h2>Orders</h2><p>Review customer purchases and update fulfillment status.</p></div><button type="button" class="admin-secondary" onclick="loadOrders()">Refresh</button></div>
-            <div class="admin-table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th></tr></thead><tbody id="ordersTable"></tbody></table></div>
+            <div class="admin-table-wrap"><table><thead><tr><th>Order ID & Date</th><th>Customer</th><th>Booked Products</th><th>Total</th><th>Payment</th><th>Status</th><th>Actions</th></tr></thead><tbody id="ordersTable"></tbody></table></div>
         </section>
 
         <section id="customersPanel" class="admin-panel">
             <div class="panel-heading"><div><h2>Customers</h2><p>View registered customers and their purchase activity.</p></div><button type="button" class="admin-secondary" onclick="loadCustomers()">Refresh</button></div>
-            <div class="admin-table-wrap"><table><thead><tr><th>Customer</th><th>Contact</th><th>Orders</th><th>Total spent</th><th>Joined</th></tr></thead><tbody id="customersTable"></tbody></table></div>
+            <div class="admin-table-wrap"><table><thead><tr><th>Customer</th><th>Contact</th><th>Products Booked</th><th>Orders</th><th>Total Spent</th><th>Joined</th></tr></thead><tbody id="customersTable"></tbody></table></div>
         </section>
     
         <section id="couponsPanel" class="admin-panel">
@@ -146,5 +147,23 @@
             </div>
         </form>
     </dialog>
+
+    <dialog id="orderDetailDialog" class="product-dialog">
+        <div style="padding: 28px;">
+            <div class="dialog-heading">
+                <div>
+                    <p class="admin-kicker">ORDER BREAKDOWN & BOOKING</p>
+                    <h2 id="orderDetailTitle">Order Details</h2>
+                </div>
+                <button type="button" class="dialog-close" onclick="closeOrderDetail()">&times;</button>
+            </div>
+            <div id="orderDetailContent"></div>
+            <div class="dialog-actions" style="margin-top: 20px;">
+                <button type="button" class="admin-secondary" onclick="closeOrderDetail()">Close</button>
+                <button type="button" class="admin-primary" id="orderDetailPrintBtn">🖨️ View Tax Invoice</button>
+            </div>
+        </div>
+    </dialog>
+
 </body>
 </html>

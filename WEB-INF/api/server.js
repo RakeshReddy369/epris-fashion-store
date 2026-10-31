@@ -1021,6 +1021,18 @@ app.get('/api/admin/customers', authenticate, requireAdmin, (req, res) => {
     const database = readDatabase();
     const customers = database.users.map(user => {
         const userOrders = database.orders.filter(o => o.userId === user.id);
+        const bookedMap = new Map();
+        userOrders.forEach(o => {
+            (o.items || []).forEach(item => {
+                const current = bookedMap.get(item.name) || 0;
+                bookedMap.set(item.name, current + (item.quantity || 1));
+            });
+        });
+        const bookedProducts = [];
+        bookedMap.forEach((qty, name) => {
+            bookedProducts.push({ name, quantity: qty });
+        });
+
         return {
             id: user.id,
             name: user.name,
@@ -1029,7 +1041,8 @@ app.get('/api/admin/customers', authenticate, requireAdmin, (req, res) => {
             role: user.role || 'customer',
             createdAt: user.createdAt,
             orderCount: userOrders.length,
-            totalSpent: userOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+            totalSpent: userOrders.reduce((sum, o) => sum + (o.total || 0), 0),
+            bookedProducts
         };
     });
     res.json({ customers });

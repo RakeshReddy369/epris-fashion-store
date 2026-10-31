@@ -379,13 +379,20 @@
                 const step3 = lvl >= 3 ? (lvl === 3 ? 'current' : 'done') : '';
                 const step4 = lvl >= 4 ? 'done' : '';
 
+                const orderDateVal = order.createdAt || order.date || new Date().toISOString();
+                const formattedDate = new Date(orderDateVal).toLocaleDateString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+
                 const orderHTML = `
                     <div class="order-card">
                         <div class="order-header">
                             <h4>Order #${order.id || (index + 1)}</h4>
                             <span class="order-status ${statusClass}">${status}</span>
                         </div>
-                        <p class="order-date">${order.date || (order.createdAt ? new Date(order.createdAt).toLocaleDateString() : new Date().toLocaleDateString())}</p>
+                        <p class="order-date">📅 Ordered on: <strong>${formattedDate}</strong></p>
                         <p class="order-total">Total: <strong>₹${order.total || 0}</strong></p>
                         
                         <div class="order-progress-bar">
