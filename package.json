@@ -1,0 +1,15 @@
+{
+  "name": "epris-fashion-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EPRIS Fashion Store Full-Stack Application",
+  "scripts": {
+    "start": "npm --prefix WEB-INF/api start",
+    "dev": "npm --prefix WEB-INF/api run dev",
+    "start:mongo": "npm --prefix WEB-INF/api run start:mongo",
+    "dev:mongo": "npm --prefix WEB-INF/api run dev:mongo",
+    "migrate:mongo": "npm --prefix WEB-INF/api run migrate:mongo",
+    "build:minify": "npm --prefix WEB-INF/api run build:minify"
+  }
+}
+

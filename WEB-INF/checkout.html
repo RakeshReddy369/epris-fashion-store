@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | EPRIS Fashion Store</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="interactive-features.js" defer></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <header>
+        <nav class="navbar">
+            <div class="logo">
+                <a href="index.html" style="text-decoration: none; color: inherit;">EPRIS</a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#men">Men</a></li>
+                <li><a href="index.html#women">Women</a></li>
+                <li><a href="index.html#new">New Arrivals</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+            <div class="nav-icons">
+                <button onclick="window.location.href='cart.html'">🛒</button>
+                <button onclick="window.location.href='profile.html'">👤</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Checkout Container -->
+    <section class="checkout-section">
+        <div class="checkout-container">
+            <!-- Progress Bar -->
+            <div class="checkout-progress">
+                <div class="progress-step active" data-step="1">
+                    <span class="step-number">1</span>
+                    <p>Shipping Address</p>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="2">
+                    <span class="step-number">2</span>
+                    <p>Delivery Method</p>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="3">
+                    <span class="step-number">3</span>
+                    <p>Payment</p>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="4">
+                    <span class="step-number">4</span>
+                    <p>Review Order</p>
+                </div>
+            </div>
+
+            <div class="checkout-main">
+                <!-- Checkout Content -->
+                <div class="checkout-content">
+
+                    <!-- Step 1: Shipping Address -->
+                    <div class="checkout-step active" id="step-1">
+                        <h2>Shipping Address</h2>
+                        
+                        <div class="saved-addresses">
+                            <h3>Saved Addresses</h3>
+                            <div id="savedAddressesList" class="addresses-option-list">
+                                <p class="info-text">No saved addresses. Please add one below.</p>
+                            </div>
+                        </div>
+
+                        <div class="or-divider">OR</div>
+
+                        <form id="newAddressForm" class="address-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fullName">Full Name *</label>
+                                    <input type="text" id="fullName" placeholder="John Doe" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="phone">Phone Number *</label>
+                                    <input type="tel" id="phone" placeholder="9876543210" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="streetAddress">Street Address *</label>
+                                <input type="text" id="streetAddress" placeholder="123 Main Street" required>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="city">City *</label>
+                                    <input type="text" id="city" placeholder="Mumbai" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="state">State *</label>
+                                    <input type="text" id="state" placeholder="Maharashtra" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="zipCode">ZIP Code *</label>
+                                    <input type="text" id="zipCode" placeholder="400001" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="addressType">Address Type</label>
+                                <select id="addressType">
+                                    <option value="home">Home</option>
+                                    <option value="work">Work</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group checkbox">
+                                <label>
+                                    <input type="checkbox" id="defaultAddress"> Set as default address
+                                </label>
+                            </div>
+                        </form>
+
+                        <button class="btn-next" onclick="nextStep(2)">Continue to Delivery</button>
+                    </div>
+
+                    <!-- Step 2: Delivery Method -->
+                    <div class="checkout-step" id="step-2">
+                        <h2>Delivery Method</h2>
+
+                        <div class="delivery-options">
+                            <div class="delivery-option" onclick="selectDelivery(this, 'standard', 100)">
+                                <input type="radio" name="delivery" value="standard" checked>
+                                <div class="option-content">
+                                    <h3>Standard Delivery</h3>
+                                    <p>5-7 Business Days</p>
+                                </div>
+                                <span class="option-price">₹100</span>
+                            </div>
+
+                            <div class="delivery-option" onclick="selectDelivery(this, 'express', 200)">
+                                <input type="radio" name="delivery" value="express">
+                                <div class="option-content">
+                                    <h3>Express Delivery</h3>
+                                    <p>2-3 Business Days</p>
+                                </div>
+                                <span class="option-price">₹200</span>
+                            </div>
+
+                            <div class="delivery-option" onclick="selectDelivery(this, 'overnight', 350)">
+                                <input type="radio" name="delivery" value="overnight">
+                                <div class="option-content">
+                                    <h3>Overnight Delivery</h3>
+                                    <p>Next Business Day</p>
+                                </div>
+                                <span class="option-price">₹350</span>
+                            </div>
+
+                            <div class="delivery-option" onclick="selectDelivery(this, 'free', 0)">
+                                <input type="radio" name="delivery" value="free">
+                                <div class="option-content">
+                                    <h3>Free Delivery</h3>
+                                    <p>7-10 Business Days (Orders above ₹500)</p>
+                                </div>
+                                <span class="option-price">FREE</span>
+                            </div>
+                        </div>
+
+                        <div class="step-buttons">
+                            <button class="btn-back" onclick="previousStep(1)">Back</button>
+                            <button class="btn-next" onclick="nextStep(3)">Continue to Payment</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Payment Method -->
+                    <div class="checkout-step" id="step-3">
+                        <h2>Payment Method</h2>
+
+                        <div class="payment-options">
+                            <div class="payment-option" onclick="selectPayment(this, 'card')">
+                                <input type="radio" name="payment" value="card" checked>
+                                <div class="option-content">
+                                    <h3>💳 Credit/Debit Card</h3>
+                                    <p>Visa, Mastercard, American Express</p>
+                                </div>
+                            </div>
+
+                            <div class="payment-option" onclick="selectPayment(this, 'upi')">
+                                <input type="radio" name="payment" value="upi">
+                                <div class="option-content">
+                                    <h3>📱 UPI</h3>
+                                    <p>Google Pay, PhonePe, Paytm</p>
+                                </div>
+                            </div>
+
+                            <div class="payment-option" onclick="selectPayment(this, 'wallet')">
+                                <input type="radio" name="payment" value="wallet">
+                                <div class="option-content">
+                                    <h3>💰 Digital Wallet</h3>
+                                    <p>Amazon Pay, Mobikwik</p>
+                                </div>
+                            </div>
+
+                            <div class="payment-option" onclick="selectPayment(this, 'bank')">
+                                <input type="radio" name="payment" value="bank">
+                                <div class="option-content">
+                                    <h3>🏦 Net Banking</h3>
+                                    <p>Direct Bank Transfer</p>
+                                </div>
+                            </div>
+
+                            <div class="payment-option" onclick="selectPayment(this, 'cod')">
+                                <input type="radio" name="payment" value="cod">
+                                <div class="option-content">
+                                    <h3>📦 Cash on Delivery</h3>
+                                    <p>Pay when you receive your order</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Payment Form (Hidden by default) -->
+                        <div id="cardPaymentForm" class="payment-form" style="display: none;">
+                            <h3>Card Details</h3>
+                            <div class="form-group">
+                                <label for="cardName">Cardholder Name *</label>
+                                <input type="text" id="cardName" placeholder="John Doe" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cardNumber">Card Number *</label>
+                                <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="expiry">Expiry Date *</label>
+                                    <input type="text" id="expiry" placeholder="MM/YY" maxlength="5" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cvv">CVV *</label>
+                                    <input type="text" id="cvv" placeholder="123" maxlength="4" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-buttons">
+                            <button class="btn-back" onclick="previousStep(2)">Back</button>
+                            <button class="btn-next" onclick="nextStep(4)">Review Order</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Review Order -->
+                    <div class="checkout-step" id="step-4">
+                        <h2>Review Your Order</h2>
+
+                        <div class="order-review">
+                            <div class="review-section">
+                                <h3>Shipping Address</h3>
+                                <p id="reviewAddress"></p>
+                            </div>
+
+                            <div class="review-section">
+                                <h3>Delivery Method</h3>
+                                <p id="reviewDelivery"></p>
+                            </div>
+
+                            <div class="review-section">
+                                <h3>Payment Method</h3>
+                                <p id="reviewPayment"></p>
+                            </div>
+
+                            <div class="review-section">
+                                <h3>Order Items</h3>
+                                <div id="reviewItems"></div>
+                            </div>
+                        </div>
+
+                        <div class="terms-checkbox">
+                            <label>
+                                <input type="checkbox" id="termsAgree" required> I agree to the Terms & Conditions and Privacy Policy
+                            </label>
+                        </div>
+
+                        <div class="step-buttons">
+                            <button class="btn-back" onclick="previousStep(3)">Back</button>
+                            <button class="btn-place-order" onclick="placeOrder()">Place Order</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Order Summary Sidebar -->
+                <aside class="checkout-sidebar">
+                    <div class="order-summary-box">
+                        <h3>Order Summary</h3>
+                        <div id="sidebarItems" class="sidebar-items">
+                            <!-- Items will be populated here -->
+                        </div>
+                        <div class="summary-divider"></div>
+                        <div class="summary-row">
+                            <span>Subtotal:</span>
+                            <span id="sidebarSubtotal">₹0</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Delivery:</span>
+                            <span id="sidebarDelivery">₹100</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Tax (10%):</span>
+                            <span id="sidebarTax">₹0</span>
+                        </div>
+                        <div class="summary-divider"></div>
+                        <div class="summary-row total">
+                            <span>Total:</span>
+                            <span id="sidebarTotal">₹0</span>
+                        </div>
+
+                        <button class="btn-continue-shopping" onclick="window.location.href='index.html'">Continue Shopping</button>
+                    </div>
+
+                    <div class="promo-code-box">
+                        <h3>Promo Code</h3>
+                        <div class="promo-input">
+                            <input type="text" id="promoCode" placeholder="Enter promo code">
+                            <button onclick="applyPromo()">Apply</button>
+                        </div>
+                        <p class="promo-hint">Popular: SAVE10, WELCOME20</p>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+
+    <script src="api-client.js"></script>
+    <script src="script.js"></script>
+    <script>
+        let currentStep = 1;
+        let selectedDelivery = { type: 'standard', cost: 100 };
+        let selectedPayment = 'card';
+        let selectedAddress = null;
+
+        // Initialize checkout
+        window.addEventListener('load', async function() {
+            const user = await requireAuthentication();
+            if (!user) return;
+            loadCheckout();
+            loadSavedAddresses();
+            updateOrderSummary();
+        });
+
+        async function getCartData() {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cart.length === 0) {
+                try {
+                    const data = await apiRequest('/cart');
+                    cart = data.cart && data.cart.items ? data.cart.items.map(item => ({
+                        id: item.productId,
+                        name: item.name,
+                        price: item.price,
+                        quantity: item.quantity || 1,
+                        color: item.color || 'Black',
+                        size: item.size || 'M',
+                        image: item.image || ''
+                    })) : [];
+                    if (cart.length) {
+                        localStorage.setItem('cart', JSON.stringify(cart));
+                    }
+                } catch (error) {
+                    console.warn('Could not load cart from server:', error.message);
+                }
+            }
+            return cart;
+        }
+
+        async function loadCheckout() {
+            const cart = await getCartData();
+            
+            if (cart.length === 0) {
+                alert('Your cart is empty');
+                window.location.href = 'cart.html';
+                return;
+            }
+
+            displayCartItems();
+        }
+
+        function displayCartItems() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const sidebarItems = document.getElementById('sidebarItems');
+            
+            let itemsHTML = '';
+            cart.forEach(item => {
+                const quantity = item.quantity || 1;
+                const itemTotal = (parseInt(item.price) || 0) * quantity;
+                itemsHTML += `
+                    <div class="sidebar-item">
+                        <img src="${item.image || 'assets/images/placeholder.svg'}" alt="${item.name}">
+                        <div>
+                            <p class="item-name">${item.name}</p>
+                            <p class="item-qty">Qty: ${quantity}</p>
+                        </div>
+                        <p class="item-total">₹${itemTotal}</p>
+                    </div>
+                `;
+            });
+
+            sidebarItems.innerHTML = itemsHTML;
+        }
+
+        async function loadSavedAddresses() {
+            const data = await apiRequest('/addresses');
+            const addresses = data.addresses || [];
+            const addressesList = document.getElementById('savedAddressesList');
+
+            if (addresses.length === 0) {
+                return;
+            }
+
+            let addressesHTML = '';
+            addresses.forEach((addr, index) => {
+                addressesHTML += `
+                    <div class="address-option" onclick="selectAddress(${index}, '${addr.name}', '${addr.phone}', '${addr.street}', '${addr.city}', '${addr.state}', '${addr.zip}')">
+                        <input type="radio" name="address" value="${index}">
+                        <div class="address-info">
+                            <h4>${addr.name} <span class="badge">${addr.type}</span></h4>
+                            <p>${addr.street}, ${addr.city}, ${addr.state} ${addr.zip}</p>
+                            <p>Phone: ${addr.phone}</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            addressesList.innerHTML = addressesHTML;
+        }
+
+        function selectAddress(index, name, phone, street, city, state, zip) {
+            selectedAddress = { name, phone, street, city, state, zip };
+            document.getElementById('fullName').value = name;
+            document.getElementById('phone').value = phone;
+            document.getElementById('streetAddress').value = street;
+            document.getElementById('city').value = city;
+            document.getElementById('state').value = state;
+            document.getElementById('zipCode').value = zip;
+
+            // Update radio button
+            document.querySelectorAll('input[name="address"]').forEach((radio, i) => {
+                radio.checked = i === index;
+            });
+        }
+
+        function selectDelivery(element, type, cost) {
+            document.querySelectorAll('.delivery-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            element.querySelector('input[type="radio"]').checked = true;
+            selectedDelivery = { type, cost };
+            updateOrderSummary();
+        }
+
+        function selectPayment(element, type) {
+            document.querySelectorAll('.payment-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            element.querySelector('input[type="radio"]').checked = true;
+            selectedPayment = type;
+
+            // Show/hide card form
+            const cardForm = document.getElementById('cardPaymentForm');
+            if (type === 'card') {
+                cardForm.style.display = 'block';
+            } else {
+                cardForm.style.display = 'none';
+            }
+        }
+
+        function nextStep(step) {
+            if (step === 2 && !validateStep1()) return;
+            if (step === 3 && !validateStep2()) return;
+            if (step === 4 && !validateStep3()) return;
+
+            currentStep = step;
+            showStep(step);
+            updateProgress();
+        }
+
+        function previousStep(step) {
+            currentStep = step;
+            showStep(step);
+            updateProgress();
+        }
+
+        function showStep(step) {
+            document.querySelectorAll('.checkout-step').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.getElementById(`step-${step}`).classList.add('active');
+
+            // Update review section on step 4
+            if (step === 4) {
+                updateReviewSection();
+            }
+        }
+
+        function updateProgress() {
+            document.querySelectorAll('.progress-step').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('active');
+        }
+
+        function updateOrderSummary() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            let subtotal = 0;
+
+            cart.forEach(item => {
+                subtotal += (parseInt(item.price) || 0) * (item.quantity || 1);
+            });
+
+            const tax = Math.floor(subtotal * 0.1);
+            const delivery = selectedDelivery.cost;
+            const total = subtotal + tax + delivery;
+
+            document.getElementById('sidebarSubtotal').textContent = '₹' + subtotal;
+            document.getElementById('sidebarDelivery').textContent = delivery === 0 ? 'FREE' : '₹' + delivery;
+            document.getElementById('sidebarTax').textContent = '₹' + tax;
+            document.getElementById('sidebarTotal').textContent = '₹' + total;
+        }
+
+        function updateReviewSection() {
+            // Address
+            const address = `${document.getElementById('fullName').value}<br>${document.getElementById('streetAddress').value}<br>${document.getElementById('city').value}, ${document.getElementById('state').value} ${document.getElementById('zipCode').value}`;
+            document.getElementById('reviewAddress').innerHTML = address;
+
+            // Delivery
+            document.getElementById('reviewDelivery').innerHTML = `${selectedDelivery.type.toUpperCase()} - ${selectedDelivery.cost === 0 ? 'FREE' : '₹' + selectedDelivery.cost}`;
+
+            // Payment
+            const paymentMethods = {
+                card: '💳 Credit/Debit Card',
+                upi: '📱 UPI',
+                wallet: '💰 Digital Wallet',
+                bank: '🏦 Net Banking',
+                cod: '📦 Cash on Delivery'
+            };
+            document.getElementById('reviewPayment').innerHTML = paymentMethods[selectedPayment];
+
+            // Items
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            let itemsHTML = '';
+            cart.forEach(item => {
+                const quantity = item.quantity || 1;
+                const itemTotal = (parseInt(item.price) || 0) * quantity;
+                itemsHTML += `<p>${item.name} (${quantity}x) - ₹${itemTotal}</p>`;
+            });
+            document.getElementById('reviewItems').innerHTML = itemsHTML;
+        }
+
+        function validateStep1() {
+            const name = document.getElementById('fullName').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const street = document.getElementById('streetAddress').value.trim();
+            const city = document.getElementById('city').value.trim();
+            const state = document.getElementById('state').value.trim();
+            const zip = document.getElementById('zipCode').value.trim();
+
+            if (!name || !phone || !street || !city || !state || !zip) {
+                alert('Please fill in all address fields');
+                return false;
+            }
+
+            return true;
+        }
+
+        function validateStep2() {
+            const delivery = document.querySelector('input[name="delivery"]:checked');
+            if (!delivery) {
+                alert('Please select a delivery method');
+                return false;
+            }
+            return true;
+        }
+
+        function validateStep3() {
+            const payment = document.querySelector('input[name="payment"]:checked');
+            if (!payment) {
+                alert('Please select a payment method');
+                return false;
+            }
+
+            if (selectedPayment === 'card') {
+                const cardNumber = document.getElementById('cardNumber').value.trim();
+                const expiry = document.getElementById('expiry').value.trim();
+                const cvv = document.getElementById('cvv').value.trim();
+
+                if (!cardNumber || !expiry || !cvv) {
+                    alert('Please fill in all card details');
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        async function syncCartToServer() {
+            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            if (!cart.length) {
+                cart = await getCartData();
+            }
+            if (!cart.length) return;
+
+            for (const item of cart) {
+                const productId = item.id || item.productId;
+                if (!productId) continue;
+                try {
+                    await apiRequest('/cart/items', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            productId,
+                            quantity: item.quantity || 1,
+                            color: item.color || 'Black',
+                            size: item.size || 'M'
+                        })
+                    });
+                } catch (error) {
+                    console.warn('Cart sync failed:', error.message);
+                }
+            }
+        }
+
+        async function handleRazorpayPayment(order, address) {
+            let config = { keyId: '', configured: false };
+            try {
+                config = await apiRequest('/payment/config');
+            } catch (e) {
+                console.warn('Could not fetch payment config:', e.message);
+            }
+
+            const createRes = await apiRequest('/payment/create-order', {
+                method: 'POST',
+                body: JSON.stringify({ amount: order.total })
+            });
+
+            const rzOrder = createRes.order;
+
+            if (window.Razorpay && config.configured && !createRes.simulated) {
+                return new Promise((resolve, reject) => {
+                    const options = {
+                        key: config.keyId,
+                        amount: rzOrder.amount,
+                        currency: rzOrder.currency || 'INR',
+                        name: 'EPRIS Fashion',
+                        description: 'Order #' + order.id,
+                        order_id: rzOrder.id,
+                        prefill: {
+                            name: address.name,
+                            contact: address.phone,
+                            email: localStorage.getItem('userEmail') || ''
+                        },
+                        theme: { color: '#17191c' },
+                        handler: async function (response) {
+                            try {
+                                await apiRequest('/payment/verify', {
+                                    method: 'POST',
+                                    body: JSON.stringify({
+                                        razorpay_order_id: response.razorpay_order_id,
+                                        razorpay_payment_id: response.razorpay_payment_id,
+                                        razorpay_signature: response.razorpay_signature,
+                                        orderId: order.id
+                                    })
+                                });
+                                resolve(true);
+                            } catch (err) {
+                                reject(new Error('Payment verification failed: ' + err.message));
+                            }
+                        },
+                        modal: {
+                            ondismiss: function() { resolve(false); }
+                        }
+                    };
+                    const rzp = new window.Razorpay(options);
+                    rzp.open();
+                });
+            } else {
+                const proceed = confirm('[Razorpay Payment Gateway]\n\nTotal: ₹' + order.total + '\nMethod: ' + selectedPayment.toUpperCase() + '\nOrder ID: ' + order.id + '\n\nClick OK to confirm payment, or Cancel to leave pending.');
+                if (proceed) {
+                    await apiRequest('/payment/verify', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            razorpay_order_id: rzOrder.id || ('rzp_sim_' + Date.now()),
+                            razorpay_payment_id: 'pay_sim_' + Date.now(),
+                            razorpay_signature: 'sig_simulated_success',
+                            orderId: order.id
+                        })
+                    });
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        async function placeOrder() {
+            if (!document.getElementById('termsAgree').checked) {
+                alert('Please agree to Terms & Conditions');
+                return;
+            }
+
+            const address = {
+                name: document.getElementById('fullName').value,
+                phone: document.getElementById('phone').value,
+                street: document.getElementById('streetAddress').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                zip: document.getElementById('zipCode').value
+            };
+
+            try {
+                const cart = await getCartData();
+                if (!cart.length) {
+                    alert('Your cart is empty. Please add items before checkout.');
+                    return;
+                }
+
+                await syncCartToServer();
+
+                const payload = {
+                    address,
+                    delivery: selectedDelivery,
+                    payment: { type: selectedPayment }
+                };
+
+                const data = await apiRequest('/orders', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                if (selectedPayment !== 'cod') {
+                    const paid = await handleRazorpayPayment(data.order, address);
+                    if (!paid) {
+                        alert('Payment was not completed. Your order remains pending.');
+                    } else {
+                        alert('Payment completed successfully!');
+                    }
+                } else {
+                    alert('Order placed successfully with Cash on Delivery!');
+                }
+
+                const storedOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+                storedOrders.unshift({ ...data.order, date: data.order.createdAt || new Date().toISOString() });
+                localStorage.setItem('userOrders', JSON.stringify(storedOrders));
+
+                localStorage.removeItem('cart');
+                window.location.href = 'order-confirmation.html?orderId=' + data.order.id;
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promoCode').value.trim().toUpperCase();
+            const discounts = {
+                'SAVE10': 0.10,
+                'WELCOME20': 0.20,
+                'SAVE50': 0.50
+            };
+
+            if (discounts[code]) {
+                alert(`Promo code applied! ${(discounts[code] * 100)}% discount`);
+                // Apply discount logic here
+            } else {
+                alert('Invalid promo code');
+            }
+        }
+    </script>
+</body>
+
+</html>

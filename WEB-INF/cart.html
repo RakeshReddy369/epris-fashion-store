@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart | EPRIS Fashion Store</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="interactive-features.js" defer></script>
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <header>
+        <nav class="navbar">
+            <div class="logo">
+                <a href="index.html" style="text-decoration: none; color: inherit;">EPRIS</a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#men">Men</a></li>
+                <li><a href="index.html#women">Women</a></li>
+                <li><a href="index.html#new">New Arrivals</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+            <div class="nav-icons">
+                <button onclick="searchProduct()">🔍</button>
+                <button onclick="window.location.href='wishlist.html'">❤️</button>
+                <button onclick="window.location.href='profile.html'">👤</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Shopping Cart Section -->
+    <section class="cart-section">
+        <div class="cart-container">
+            <h1>🛒 Shopping Cart</h1>
+            <p class="cart-subtitle">Review your items before checkout</p>
+
+            <div class="cart-content">
+                <div id="cartItems" class="cart-items">
+                    <!-- Cart items will be populated here -->
+                </div>
+
+                <div class="cart-summary">
+                    <h3>Order Summary</h3>
+                    <div class="summary-item">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">₹0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Shipping:</span>
+                        <span id="shipping">FREE</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Tax (10%):</span>
+                        <span id="tax">₹0</span>
+                    </div>
+                    <hr style="border: none; border-top: 1px solid #ddd; margin: 15px 0;">
+                    <div class="summary-item total">
+                        <span>Total:</span>
+                        <span id="total">₹0</span>
+                    </div>
+                    <button class="profile-btn" style="width: 100%; margin-top: 20px;" onclick="checkout()">Proceed to Checkout</button>
+                    <button class="profile-btn-cancel" style="width: 100%; margin-top: 10px;" onclick="window.location.href='index.html'">Continue Shopping</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+    <script>
+        // Load cart on page load
+        window.addEventListener('load', function() {
+            loadCart();
+        });
+
+        function loadCart() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const cartItems = document.getElementById('cartItems');
+
+            if (cart.length === 0) {
+                cartItems.innerHTML = '<p class="empty-cart-message">Your cart is empty. <a href="index.html">Continue shopping</a></p>';
+                updateCartTotal([]);
+                return;
+            }
+
+            let itemsHTML = '';
+            cart.forEach((item, index) => {
+                const numericPrice = Number(String(item.price).replace(/[₹,]/g, '')) || 0;
+                const itemTotal = numericPrice * (item.quantity || 1);
+                itemsHTML += `
+                    <div class="cart-item">
+                        <div class="cart-item-image">
+                            <img src="${item.image || 'assets/images/placeholder.svg'}" alt="${item.name}">
+                        </div>
+                        <div class="cart-item-details">
+                            <h3>${item.name}</h3>
+                            ${item.color ? `<p class="item-detail">Color: ${item.color}</p>` : ''}
+                            ${item.size ? `<p class="item-detail">Size: ${item.size}</p>` : ''}
+                            <p class="item-price">₹${numericPrice}</p>
+                        </div>
+                        <div class="cart-item-quantity">
+                            <button onclick="decrementQuantity(${index})">-</button>
+                            <input type="number" value="${item.quantity || 1}" readonly>
+                            <button onclick="incrementQuantity(${index})">+</button>
+                        </div>
+                        <div class="cart-item-total">
+                            <p>₹${itemTotal}</p>
+                        </div>
+                        <button class="delete-btn" onclick="removeFromCart(${index})">Remove</button>
+                    </div>
+                `;
+            });
+
+            cartItems.innerHTML = itemsHTML;
+            updateCartTotal(cart);
+        }
+
+        function updateCartTotal(cart) {
+            let subtotal = 0;
+
+            cart.forEach(item => {
+                const numericPrice = Number(String(item.price).replace(/[₹,]/g, '')) || 0;
+                subtotal += numericPrice * (item.quantity || 1);
+            });
+
+            const tax = Math.floor(subtotal * 0.1);
+            const shipping = subtotal > 500 ? 0 : 100;
+            const total = subtotal + tax + shipping;
+
+            document.getElementById('subtotal').textContent = '₹' + subtotal;
+            document.getElementById('tax').textContent = '₹' + tax;
+            document.getElementById('shipping').textContent = shipping === 0 ? 'FREE' : '₹' + shipping;
+            document.getElementById('total').textContent = '₹' + total;
+        }
+
+        function incrementQuantity(index) {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cart[index]) {
+                cart[index].quantity = (cart[index].quantity || 1) + 1;
+                localStorage.setItem('cart', JSON.stringify(cart));
+                loadCart();
+            }
+        }
+
+        function decrementQuantity(index) {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cart[index] && cart[index].quantity > 1) {
+                cart[index].quantity -= 1;
+                localStorage.setItem('cart', JSON.stringify(cart));
+                loadCart();
+            }
+        }
+
+        function removeFromCart(index) {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart.splice(index, 1);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            alert('Item removed from cart');
+            loadCart();
+        }
+
+        function proceedToCheckout() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            
+            if (cart.length === 0) {
+                alert('Your cart is empty');
+                return;
+            }
+
+            // Check if user is logged in
+            const userEmail = localStorage.getItem('userEmail');
+            if (!userEmail) {
+                alert('Please login to checkout');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Redirect to checkout page
+            window.location.href = 'checkout.html';
+        }
+
+        function checkout() {
+            // Legacy function - now calls proceedToCheckout
+            proceedToCheckout();
+        }
+    </script>
+</body>
+
+</html>

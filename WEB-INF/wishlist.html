@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f0efe9">
+    <title>Wishlist | EPRIS Fashion Store</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="wishlist-concept.css">
+    <script src="api-client.js"></script>
+    <script src="interactive-features.js" defer></script>
+</head>
+
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="logo">
+                <a href="index.html" style="text-decoration: none; color: inherit;">EPRIS</a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#men">Men</a></li>
+                <li><a href="index.html#women">Women</a></li>
+                <li><a href="index.html#new">New Arrivals</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+            <div class="nav-icons">
+                <button onclick="searchProduct()" aria-label="Search">🔍</button>
+                <button onclick="showCart()" aria-label="View cart">🛒</button>
+                <button onclick="window.location.href='index.html'" aria-label="Go to home">🏠</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="wishlist-page">
+        <div class="wishlist-topline">
+            <span>EPRIS / YOUR EDIT</span>
+            <span>THE PIECES YOU KEEP</span>
+        </div>
+
+        <section class="wishlist-heading" aria-labelledby="wishlistTitle">
+            <div>
+                <p class="wishlist-eyebrow"><span></span> A good eye never forgets</p>
+                <h1 id="wishlistTitle">Saved for<br><em>yourself.</em></h1>
+                <p class="wishlist-intro">The pieces you love, all in one place. Ready when you are.</p>
+            </div>
+            <div class="wishlist-count-card" aria-live="polite">
+                <span id="wishlistCount">00</span>
+                <span>PIECES IN<br>YOUR EDIT</span>
+            </div>
+        </section>
+
+        <div class="wishlist-toolbar">
+            <span id="wishlistCaption">YOUR SAVED PIECES</span>
+            <a href="index.html">Continue exploring <span aria-hidden="true">↗</span></a>
+        </div>
+
+        <div class="wishlist-layout">
+            <section id="wishlistItems" class="wishlist-grid" aria-label="Saved products">
+            </section>
+
+            <aside class="wishlist-summary">
+                <p class="wishlist-summary-kicker">YOUR EDIT</p>
+                <h2>A little<br>inspiration.</h2>
+                <div class="wishlist-summary-line"></div>
+                <div class="wishlist-summary-row">
+                    <span>Pieces saved</span>
+                    <strong id="totalWishlistItems">0</strong>
+                </div>
+                <p class="wishlist-summary-copy">Good things are worth keeping close. Move your favorites to your bag whenever you're ready.</p>
+                <button class="wishlist-add-all" id="addAllButton" onclick="addAllToCart()">
+                    <span>Add all to bag</span>
+                    <span aria-hidden="true">↗</span>
+                </button>
+                <a class="wishlist-back-link" href="index.html">Back to the collection</a>
+            </aside>
+        </div>
+
+        <footer class="wishlist-footer">
+            <span>GOOD THINGS ARE WORTH KEEPING.</span>
+            <span>© EPRIS FASHION STORE</span>
+        </footer>
+    </main>
+
+    <script src="script.js"></script>
+    <script>
+        window.addEventListener('load', loadWishlist);
+
+        function escapeHTML(value) {
+            return String(value).replace(/[&<>"']/g, character => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[character]);
+        }
+
+        function getWishlistImage(item) {
+            if (item.image) return item.image;
+            const matchingProduct = typeof products !== 'undefined'
+                ? products.find(product => String(product.id) === String(item.id))
+                : null;
+            return matchingProduct?.image || 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=85';
+        }
+
+        function handleWishlistImageError(event) {
+            const image = event.currentTarget;
+            if (image.dataset.fallbackApplied) return;
+            image.dataset.fallbackApplied = 'true';
+            image.src = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=85';
+        }
+
+        function getWishlistPrice(item) {
+            const price = Number(String(item.price ?? 0).replace(/[₹,\s]/g, ''));
+            return Number.isFinite(price) ? price : 0;
+        }
+
+        function formatWishlistPrice(price) {
+            return `₹${price.toLocaleString('en-IN')}`;
+        }
+
+        async function loadWishlist() {
+            let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+            const wishlistItems = document.getElementById('wishlistItems');
+            const addAllButton = document.getElementById('addAllButton');
+
+            if (typeof getAuthToken === 'function' && getAuthToken()) {
+                try {
+                    for (const localItem of wishlist) {
+                        if (localItem && localItem.id) {
+                            await apiRequest('/wishlist/' + localItem.id, { method: 'POST' }).catch(() => {});
+                        }
+                    }
+                    const res = await apiRequest('/wishlist');
+                    if (res && Array.isArray(res.products)) {
+                        wishlist = res.products.map(p => ({
+                            id: p.id,
+                            name: p.name,
+                            price: p.price,
+                            image: p.image || getWishlistImage(p)
+                        }));
+                        localStorage.setItem('wishlist', JSON.stringify(wishlist));
+                    }
+                } catch (e) {
+                    console.warn('Backend wishlist sync skipped:', e.message);
+                }
+            }
+
+            document.getElementById('totalWishlistItems').textContent = wishlist.length;
+            document.getElementById('wishlistCount').textContent = String(wishlist.length).padStart(2, '0');
+            document.getElementById('wishlistCaption').textContent = wishlist.length
+                ? `${wishlist.length} ${wishlist.length === 1 ? 'PIECE' : 'PIECES'} IN YOUR EDIT`
+                : 'YOUR SAVED PIECES';
+            addAllButton.disabled = wishlist.length === 0;
+
+            if (wishlist.length === 0) {
+                wishlistItems.innerHTML = `
+                    <div class="wishlist-empty">
+                        <span class="wishlist-empty-mark" aria-hidden="true">♡</span>
+                        <p class="wishlist-eyebrow">A fresh start</p>
+                        <h2>Your edit is<br>waiting to happen.</h2>
+                        <p>Save the pieces that catch your eye and find them here whenever you're ready.</p>
+                        <a href="index.html">Explore the collection <span aria-hidden="true">↗</span></a>
+                    </div>
+                `;
+                return;
+            }
+
+            wishlistItems.innerHTML = wishlist.map((item, index) => `
+                <article class="wishlist-card">
+                    <div class="wishlist-card-image">
+                        <img src="${escapeHTML(getWishlistImage(item))}" alt="${escapeHTML(item.name)}" loading="lazy">
+                        <span class="wishlist-card-index">${String(index + 1).padStart(2, '0')}</span>
+                        <button class="wishlist-remove" type="button" aria-label="Remove ${escapeHTML(item.name)} from wishlist" onclick="removeFromWishlist(${index})">×</button>
+                    </div>
+                    <div class="wishlist-card-info">
+                        <div>
+                            <p class="wishlist-card-label">IN YOUR EDIT</p>
+                            <h2>${escapeHTML(item.name)}</h2>
+                            <p class="wishlist-card-price">${formatWishlistPrice(getWishlistPrice(item))}</p>
+                        </div>
+                        <button class="wishlist-card-add" type="button" onclick="addItemToCart(${index})">
+                            <span>Add to bag</span>
+                            <span aria-hidden="true">↗</span>
+                        </button>
+                    </div>
+                </article>
+            `).join('');
+            wishlistItems.querySelectorAll('.wishlist-card-image img').forEach(image => {
+                image.addEventListener('error', handleWishlistImageError);
+            });
+        }
+
+        async function removeFromWishlist(index, showMessage = true) {
+            const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+            const item = wishlist[index];
+            wishlist.splice(index, 1);
+            localStorage.setItem('wishlist', JSON.stringify(wishlist));
+
+            if (item && item.id && typeof getAuthToken === 'function' && getAuthToken()) {
+                try {
+                    await apiRequest('/wishlist/' + item.id, { method: 'DELETE' });
+                } catch (e) {
+                    console.warn('Backend wishlist removal failed:', e.message);
+                }
+            }
+
+            if (showMessage) {
+                if (typeof showToast === 'function') showToast('Removed from wishlist', 'info');
+                else alert('Removed from wishlist');
+            }
+            loadWishlist();
+        }
+
+        function createCartItem(item) {
+            return {
+                id: item.id,
+                name: item.name,
+                price: getWishlistPrice(item),
+                quantity: 1,
+                image: getWishlistImage(item)
+            };
+        }
+
+        function addItemToCart(index) {
+            const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+            const item = wishlist[index];
+            if (!item) return;
+
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            cart.push(createCartItem(item));
+            localStorage.setItem('cart', JSON.stringify(cart));
+            removeFromWishlist(index, false);
+            alert('Added to cart!');
+        }
+
+        function addAllToCart() {
+            const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+            if (wishlist.length === 0) {
+                alert('Your wishlist is empty');
+                return;
+            }
+
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            wishlist.forEach(item => cart.push(createCartItem(item)));
+            localStorage.setItem('cart', JSON.stringify(cart));
+            localStorage.removeItem('wishlist');
+            alert('All items added to cart!');
+            window.location.href = 'cart.html';
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation | EPRIS Fashion Store</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="interactive-features.js" defer></script>
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <header>
+        <nav class="navbar">
+            <div class="logo">
+                <a href="index.html" style="text-decoration: none; color: inherit;">EPRIS</a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#men">Men</a></li>
+                <li><a href="index.html#women">Women</a></li>
+                <li><a href="index.html#new">New Arrivals</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+            <div class="nav-icons">
+                <button onclick="window.location.href='index.html'">🏠</button>
+                <button onclick="window.location.href='profile.html'">👤</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Confirmation Section -->
+    <section class="confirmation-section">
+        <div class="confirmation-container">
+            <div class="confirmation-content">
+                <div class="success-icon">✅</div>
+                <h1>Order Confirmed!</h1>
+                <p class="confirmation-message">Thank you for your purchase</p>
+
+                <div class="order-confirmation-details">
+                    <div class="detail-item">
+                        <label>Order ID:</label>
+                        <p id="orderId">ORD123456789</p>
+                    </div>
+                    <div class="detail-item">
+                        <label>Order Date:</label>
+                        <p id="orderDate">22 Aug, 2026</p>
+                    </div>
+                    <div class="detail-item">
+                        <label>Estimated Delivery:</label>
+                        <p id="estimatedDelivery">27 Aug - 29 Aug, 2026</p>
+                    </div>
+                </div>
+
+                <div class="confirmation-card">
+                    <h2>Order Details</h2>
+                    <div id="orderItems" class="order-items-list">
+                        <!-- Items will be populated here -->
+                    </div>
+                </div>
+
+                <div class="confirmation-card">
+                    <h2>Shipping Address</h2>
+                    <div id="shippingAddress" class="shipping-details">
+                        <!-- Address will be populated here -->
+                    </div>
+                </div>
+
+                <div class="confirmation-card">
+                    <h2>Order Summary</h2>
+                    <div class="summary-breakdown">
+                        <div class="summary-item">
+                            <span>Subtotal:</span>
+                            <span id="confirmSubtotal">₹0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span>Delivery Charge:</span>
+                            <span id="confirmDelivery">₹0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span>Tax (10%):</span>
+                            <span id="confirmTax">₹0</span>
+                        </div>
+                        <div class="summary-divider"></div>
+                        <div class="summary-item total">
+                            <span>Total Amount:</span>
+                            <span id="confirmTotal">₹0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span>Payment Method:</span>
+                            <span id="confirmPayment">Card</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="confirmation-card">
+                    <h2>Track Your Order</h2>
+                    <p>You can track your order status from your <a href="profile.html">account page</a>. A confirmation email has been sent to your registered email address.</p>
+                </div>
+
+                <div class="confirmation-actions">
+                    <button class="btn-action primary" onclick="window.location.href='profile.html'">View My Orders</button>
+                    <button class="btn-action secondary" onclick="window.location.href='index.html'">Continue Shopping</button>
+                </div>
+
+                <div class="order-tracking">
+                    <h3>Order Status</h3>
+                    <div class="tracking-steps">
+                        <div class="tracking-step completed">
+                            <span class="step-circle">✓</span>
+                            <p>Order Confirmed</p>
+                        </div>
+                        <div class="tracking-step">
+                            <span class="step-circle">📦</span>
+                            <p>Processing</p>
+                        </div>
+                        <div class="tracking-step">
+                            <span class="step-circle">🚚</span>
+                            <p>On the Way</p>
+                        </div>
+                        <div class="tracking-step">
+                            <span class="step-circle">📍</span>
+                            <p>Delivered</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="confirmation-sidebar">
+                <div class="help-box">
+                    <h3>Need Help?</h3>
+                    <div class="help-items">
+                        <a href="#" class="help-link">📧 Contact Support</a>
+                        <a href="#" class="help-link">📱 Chat with us</a>
+                        <a href="#" class="help-link">❓ FAQs</a>
+                        <a href="#" class="help-link">🔄 Return Policy</a>
+                    </div>
+                </div>
+
+                <div class="promo-box">
+                    <h3>Newsletter</h3>
+                    <p>Subscribe to get exclusive offers and updates</p>
+                    <div class="newsletter-input">
+                        <input type="email" placeholder="Enter your email">
+                        <button>Subscribe</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="api-client.js"></script>
+    <script src="script.js"></script>
+    <script>
+        window.addEventListener('load', async function() {
+            await loadOrderConfirmation();
+        });
+
+        async function loadOrderConfirmation() {
+            const params = new URLSearchParams(window.location.search);
+            const orderId = params.get('orderId');
+
+            if (!orderId) {
+                alert('Order not found');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            let order = null;
+            const ordersFromStorage = JSON.parse(localStorage.getItem('userOrders') || '[]');
+            order = ordersFromStorage.find(o => o.id === orderId);
+
+            if (!order) {
+                const token = localStorage.getItem('authToken');
+                if (token) {
+                    try {
+                        const data = await apiRequest('/orders/' + orderId);
+                        order = data.order;
+                    } catch (error) {
+                        console.warn('API order lookup failed:', error.message);
+                    }
+                }
+            }
+
+            if (!order) {
+                alert('Order not found');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            displayOrderDetails(order);
+        }
+
+        function displayOrderDetails(order) {
+            const orderDateValue = order.date || order.createdAt || new Date().toISOString();
+
+            // Order ID and Date
+            document.getElementById('orderId').textContent = order.id;
+            document.getElementById('orderDate').textContent = new Date(orderDateValue).toLocaleDateString('en-IN', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+
+            // Calculate estimated delivery (5-7 days from now)
+            const deliveryDate = new Date();
+            deliveryDate.setDate(deliveryDate.getDate() + 6);
+            const deliveryDate2 = new Date();
+            deliveryDate2.setDate(deliveryDate2.getDate() + 8);
+            
+            document.getElementById('estimatedDelivery').textContent = 
+                deliveryDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) + 
+                ' - ' + 
+                deliveryDate2.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+
+            // Order Items
+            const itemsList = document.getElementById('orderItems');
+            let itemsHTML = '';
+            let subtotal = 0;
+
+            order.items.forEach(item => {
+                const quantity = item.quantity || 1;
+                const itemTotal = (parseInt(item.price) || 0) * quantity;
+                subtotal += itemTotal;
+
+                itemsHTML += `
+                    <div class="order-item">
+                        <img src="${item.image || 'assets/images/placeholder.svg'}" alt="${item.name}">
+                        <div class="item-details">
+                            <h4>${item.name}</h4>
+                            ${item.color ? `<p>Color: ${item.color}</p>` : ''}
+                            ${item.size ? `<p>Size: ${item.size}</p>` : ''}
+                            <p>Qty: ${quantity}</p>
+                        </div>
+                        <p class="item-price">₹${itemTotal}</p>
+                    </div>
+                `;
+            });
+
+            itemsList.innerHTML = itemsHTML;
+
+            // Shipping Address
+            const addr = order.address;
+            document.getElementById('shippingAddress').innerHTML = `
+                <p><strong>${addr.name}</strong></p>
+                <p>${addr.street}</p>
+                <p>${addr.city}, ${addr.state} ${addr.zip}</p>
+            `;
+
+            // Order Summary
+            const tax = Math.floor(subtotal * 0.1);
+            const delivery = order.total - subtotal - tax;
+            const total = order.total;
+
+            document.getElementById('confirmSubtotal').textContent = '₹' + subtotal;
+            document.getElementById('confirmDelivery').textContent = delivery === 0 ? 'FREE' : '₹' + delivery;
+            document.getElementById('confirmTax').textContent = '₹' + tax;
+            document.getElementById('confirmTotal').textContent = '₹' + total;
+
+            // Payment Method
+            const paymentMethods = {
+                card: '💳 Credit/Debit Card',
+                upi: '📱 UPI',
+                wallet: '💰 Digital Wallet',
+                bank: '🏦 Net Banking',
+                cod: '📦 Cash on Delivery'
+            };
+            const paymentType = typeof order.payment === 'object' ? order.payment.type : order.payment;
+            document.getElementById('confirmPayment').textContent = paymentMethods[paymentType] || paymentType;
+
+            // Live order tracking state
+            const currentStatus = order.status || 'Pending';
+            const statusLevels = { 'Pending': 1, 'Confirmed': 1, 'Processing': 2, 'Shipped': 3, 'Delivered': 4 };
+            const level = statusLevels[currentStatus] || 1;
+            const stepEls = document.querySelectorAll('.tracking-steps .tracking-step');
+            stepEls.forEach((el, i) => {
+                el.classList.remove('completed', 'active');
+                if (i + 1 < level) {
+                    el.classList.add('completed');
+                } else if (i + 1 === level) {
+                    el.classList.add('active');
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

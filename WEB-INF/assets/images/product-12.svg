@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 750" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#db2777" />
+      <stop offset="100%" stop-color="#9d174d" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-opacity="0.15" />
+    </filter>
+  </defs>
+  <rect width="600" height="750" fill="url(#bg)" rx="8" />
+  
+  <!-- Subtle pattern / branding -->
+  <rect x="24" y="24" width="552" height="702" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1" rx="4" />
+  <text x="50" y="70" fill="rgba(255,255,255,0.4)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" letter-spacing="4">EPRIS STUDIO</text>
+  <text x="550" y="70" text-anchor="end" fill="rgba(255,255,255,0.4)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" letter-spacing="2">WOMEN</text>
+  
+  <!-- Main Illustration Artwork -->
+  <g filter="url(#shadow)" transform="translate(150, 160)">
+    
+  <path d="M100 40 C130 25 170 25 200 40 L240 80 L210 100 L210 260 L90 260 L90 100 L60 80 Z" fill="#ffffff" opacity="0.95" />
+  <path d="M130 40 Q150 65 170 40" stroke="#ec4899" stroke-width="3" fill="none" />
+
+  </g>
+  
+  <!-- Label & Badge -->
+  <g transform="translate(50, 620)">
+    <rect x="0" y="0" width="500" height="70" fill="rgba(0,0,0,0.25)" rx="6" />
+    <text x="24" y="32" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="700" letter-spacing="0.5">Women's Elegant Top</text>
+    <text x="24" y="52" fill="rgba(255,255,255,0.7)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13">Exclusive Collection</text>
+    <circle cx="460" cy="35" r="16" fill="rgba(255,255,255,0.2)" />
+    <path d="M455 35 L465 35 M461 31 L465 35 L461 39" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  </g>
+</svg>

@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f0efe9">
+    <title>Product Details | EPRIS Fashion Store</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="product-detail-concept.css">
+    <script src="api-client.js"></script>
+    <script src="interactive-features.js" defer></script>
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <header>
+        <nav class="navbar">
+            <div class="logo">
+                <a href="index.html" style="text-decoration: none; color: inherit;">EPRIS</a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#men">Men</a></li>
+                <li><a href="index.html#women">Women</a></li>
+                <li><a href="index.html#new">New Arrivals</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+            <div class="nav-icons">
+                <button onclick="searchProduct()">🔍</button>
+                <button onclick="showCart()">🛒</button>
+                <button onclick="toggleWishlist()">❤️</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb product-breadcrumb">
+        <a href="index.html">Home</a> / <span id="breadcrumbCategory">Men</span> / <span id="productTitle">Product</span>
+    </div>
+
+    <!-- Product Detail Section -->
+    <section class="product-detail product-detail-concept">
+        <div class="product-detail-container product-editorial-layout">
+            <!-- Product Gallery -->
+            <div class="product-gallery product-editorial-gallery">
+                <div class="main-image">
+                    <img id="mainImage" src="https://images.unsplash.com/photo-1523275335684-37898b6baf30" alt="Premium casual t-shirt">
+                    <span class="gallery-edition">EPRIS / THE DAILY EDIT</span>
+                </div>
+                <div class="thumbnail-images">
+                    <button class="thumbnail-button active" type="button" aria-label="Show product image 1" onclick="changeImage(this)">
+                        <img class="thumbnail" src="https://images.unsplash.com/photo-1523275335684-37898b6baf30" alt="">
+                    </button>
+                    <button class="thumbnail-button" type="button" aria-label="Show product image 2" onclick="changeImage(this)">
+                        <img class="thumbnail" src="https://images.unsplash.com/photo-1552062407-c551eeda4671" alt="">
+                    </button>
+                    <button class="thumbnail-button" type="button" aria-label="Show product image 3" onclick="changeImage(this)">
+                        <img class="thumbnail" src="https://images.unsplash.com/photo-1556821552-7f41c5129397" alt="">
+                    </button>
+                    <button class="thumbnail-button" type="button" aria-label="Show product image 4" onclick="changeImage(this)">
+                        <img class="thumbnail" src="https://images.unsplash.com/photo-1542272604-787c62228ecb" alt="">
+                    </button>
+                </div>
+            </div>
+
+            <!-- Product Information -->
+            <div class="product-info product-editorial-info">
+                <p class="product-overline"><span></span> A considered essential</p>
+                <h1 id="productName">Premium Casual T-Shirt</h1>
+                
+                <div class="product-rating">
+                    <span class="stars">⭐⭐⭐⭐⭐</span>
+                    <span class="rating-text">(254 Reviews)</span>
+                </div>
+
+                <div class="product-price">
+                    <span class="current-price" id="currentPrice">₹1,299</span>
+                    <span class="original-price" id="originalPrice">₹1,999</span>
+                    <span class="discount" id="discount">35% OFF</span>
+                </div>
+
+                <!-- Free Virtual Trial Feature Hero Pill -->
+                <div class="trial-hero-pill" onclick="openVirtualTrial()" role="button" tabindex="0" aria-label="Open Free Virtual Trial Room">
+                    <span class="trial-sparkle">✨</span>
+                    <span class="trial-pill-text"><strong>Free Virtual Trial Available:</strong> Try this on our diverse models or upload your photo</span>
+                    <span class="trial-pill-action">Try On Free →</span>
+                </div>
+
+                <p class="product-description" id="productDescription">
+                    High-quality premium cotton t-shirt perfect for everyday wear. Made with comfortable and breathable fabric that keeps you cool throughout the day. Perfect for casual outings, gym sessions, or relaxing at home.
+                </p>
+
+                <!-- Color Selection -->
+                <div class="product-option">
+                    <label>Select Color:</label>
+                    <div class="color-options">
+                        <button class="color-btn active" style="background-color: #000" onclick="selectColor(this, 'Black')" title="Black"></button>
+                        <button class="color-btn" style="background-color: #fff; border: 2px solid #ddd" onclick="selectColor(this, 'White')" title="White"></button>
+                        <button class="color-btn" style="background-color: #1e90ff" onclick="selectColor(this, 'Blue')" title="Blue"></button>
+                        <button class="color-btn" style="background-color: #ff6b6b" onclick="selectColor(this, 'Red')" title="Red"></button>
+                        <button class="color-btn" style="background-color: #95a5a6" onclick="selectColor(this, 'Gray')" title="Gray"></button>
+                    </div>
+                    <p class="selected-color">Selected: <span id="selectedColor">Black</span></p>
+                </div>
+
+                <!-- Size Selection -->
+                <div class="product-option">
+                    <label>Select Size:</label>
+                    <div class="size-options">
+                        <button class="size-btn" onclick="selectSize(this, 'XS')">XS</button>
+                        <button class="size-btn" onclick="selectSize(this, 'S')">S</button>
+                        <button class="size-btn active" onclick="selectSize(this, 'M')">M</button>
+                        <button class="size-btn" onclick="selectSize(this, 'L')">L</button>
+                        <button class="size-btn" onclick="selectSize(this, 'XL')">XL</button>
+                        <button class="size-btn" onclick="selectSize(this, 'XXL')">XXL</button>
+                    </div>
+                    <p class="selected-size">Selected: <span id="selectedSize">M</span></p>
+                    <p class="fit-recommendation-text">💡 <span id="productFitNote">Regular fit. Model is 6'1" wearing size M.</span> <a href="javascript:void(0)" onclick="openVirtualTrial()" class="trial-link-accent">See 3D Fit Preview</a></p>
+                </div>
+
+                <!-- Quantity -->
+                <div class="product-option">
+                    <label>Quantity:</label>
+                    <div class="quantity-selector">
+                        <button onclick="decreaseQuantity()">-</button>
+                        <input type="number" id="quantity" value="1" min="1" max="10">
+                        <button onclick="increaseQuantity()">+</button>
+                    </div>
+                </div>
+
+                <!-- Add to Cart & Wishlist -->
+                <div class="product-actions">
+                    <button class="add-to-cart-btn" onclick="addProductToCart()">🛒 Add to Cart</button>
+                    <button class="virtual-trial-action-btn" type="button" onclick="openVirtualTrial()" title="Try on virtually for free">
+                        <span class="trial-icon">🪞</span> Free Virtual Trial
+                    </button>
+                    <button class="wishlist-btn" id="wishlistBtn" onclick="addToWishlist()">❤️ Add to Wishlist</button>
+                </div>
+
+                <!-- Product Details -->
+                <div class="product-details-info">
+                    <h3>Product Details</h3>
+                    <ul>
+                        <li><strong>Category:</strong> <span id="productCategory">Men</span></li>
+                        <li><strong>Availability:</strong> <span id="productAvailability">In stock</span></li>
+                        <li><strong>Product:</strong> <span id="productDetailsName">Premium Casual T-Shirt</span></li>
+                        <li><strong>Free Virtual Trial:</strong> Available for instant fit testing with zero payment</li>
+                        <li><strong>Shipping:</strong> Free shipping on orders above ₹500</li>
+                        <li><strong>Returns:</strong> 30-day money-back guarantee</li>
+                    </ul>
+                </div>
+
+                <!-- Delivery Info -->
+                <div class="delivery-info">
+                    <div class="info-item">
+                        <span class="info-icon">🚚</span>
+                        <div>
+                            <p class="info-title">Free Delivery</p>
+                            <p class="info-subtitle">Orders over ₹500</p>
+                        </div>
+                    </div>
+                    <div class="info-item" onclick="openVirtualTrial()" style="cursor: pointer;" title="Open Free Virtual Trial">
+                        <span class="info-icon">🪞</span>
+                        <div>
+                            <p class="info-title">Free Virtual Fitting</p>
+                            <p class="info-subtitle">Test fit on models or photo</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-icon">🔄</span>
+                        <div>
+                            <p class="info-title">Easy Returns</p>
+                            <p class="info-subtitle">30 days return policy</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-icon">🛡️</span>
+                        <div>
+                            <p class="info-title">100% Secure</p>
+                            <p class="info-subtitle">SSL Encrypted checkout</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reviews Section -->
+    <section class="reviews-section product-reviews-concept">
+        <div class="reviews-container">
+            <div class="reviews-header">
+                <h2>Customer Reviews</h2>
+                <div class="review-summary">
+                    <div class="rating-box">
+                        <p class="big-rating">4.5</p>
+                        <p class="stars-small">⭐⭐⭐⭐⭐</p>
+                        <p class="review-count">Based on 254 reviews</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="write-review">
+                <h3>Write a Review</h3>
+                <form id="reviewForm">
+                    <div class="form-group">
+                        <label for="reviewName">Name</label>
+                        <input type="text" id="reviewName" placeholder="Your name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reviewEmail">Email</label>
+                        <input type="email" id="reviewEmail" placeholder="Your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reviewRating">Rating</label>
+                        <select id="reviewRating" required>
+                            <option value="">Select rating</option>
+                            <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+                            <option value="4">⭐⭐⭐⭐ Good</option>
+                            <option value="3">⭐⭐⭐ Average</option>
+                            <option value="2">⭐⭐ Poor</option>
+                            <option value="1">⭐ Very Poor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="reviewText">Your Review</label>
+                        <textarea id="reviewText" placeholder="Share your experience with this product..." rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="profile-btn">Submit Review</button>
+                </form>
+            </div>
+
+            <div class="reviews-list">
+                <h3>All Reviews</h3>
+                <div id="reviewsList">
+                    <div class="review-item">
+                        <div class="review-header">
+                            <p class="reviewer-name">Raj Kumar</p>
+                            <p class="review-date">2 days ago</p>
+                        </div>
+                        <p class="review-rating">⭐⭐⭐⭐⭐</p>
+                        <p class="review-title">Amazing quality and fit!</p>
+                        <p class="review-text">This t-shirt is incredibly comfortable and the quality is excellent. The fit is perfect and it washes well. Highly recommend!</p>
+                    </div>
+
+                    <div class="review-item">
+                        <div class="review-header">
+                            <p class="reviewer-name">Priya Singh</p>
+                            <p class="review-date">1 week ago</p>
+                        </div>
+                        <p class="review-rating">⭐⭐⭐⭐</p>
+                        <p class="review-title">Great value for money</p>
+                        <p class="review-text">Good quality material and the price is very reasonable. Fits well and comfortable to wear all day. Worth buying!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Related Products -->
+    <section class="related-products related-products-concept">
+        <div class="related-container">
+            <h2>You Might Also Like</h2>
+            <div class="related-products-grid">
+                <div class="related-product-card">
+                    <img src="https://images.unsplash.com/photo-1552062407-c551eeda4671" alt="Product">
+                    <h4>Classic Polo Shirt</h4>
+                    <p class="price">₹899 <span class="original">₹1,299</span></p>
+                    <button onclick="window.location.href='product-detail.html?id=2'">View Details</button>
+                </div>
+                <div class="related-product-card">
+                    <img src="https://images.unsplash.com/photo-1556821552-7f41c5129397" alt="Product">
+                    <h4>Denim Jacket</h4>
+                    <p class="price">₹1,799 <span class="original">₹2,499</span></p>
+                    <button onclick="window.location.href='product-detail.html?id=3'">View Details</button>
+                </div>
+                <div class="related-product-card">
+                    <img src="https://images.unsplash.com/photo-1542272604-787c62228ecb" alt="Product">
+                    <h4>Casual Shorts</h4>
+                    <p class="price">₹699 <span class="original">₹999</span></p>
+                    <button onclick="window.location.href='product-detail.html?id=4'">View Details</button>
+                </div>
+                <div class="related-product-card">
+                    <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30" alt="Product">
+                    <h4>Premium Hoodie</h4>
+                    <p class="price">₹1,499 <span class="original">₹2,199</span></p>
+                    <button onclick="window.location.href='product-detail.html?id=5'">View Details</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Free Virtual Trial / Fitting Room Modal Dialog -->
+    <dialog id="virtualTrialDialog" class="virtual-trial-dialog" closedby="any" aria-labelledby="trialModalTitle">
+        <div class="trial-modal-content">
+            <!-- Modal Header -->
+            <div class="trial-modal-header">
+                <div class="trial-header-brand">
+                    <span class="trial-kicker">EPRIS ATELIER • 100% FREE TRIAL</span>
+                    <h2 id="trialModalTitle" class="trial-title">Virtual Fitting Room</h2>
+                    <p class="trial-desc">Try <span id="trialProductName" class="trial-product-highlight">this item</span> on interactive models or upload your own photo.</p>
+                </div>
+                <form method="dialog" style="margin: 0;">
+                    <button type="submit" class="trial-close-btn" aria-label="Close Virtual Trial">&times;</button>
+                </form>
+            </div>
+
+            <!-- Modal Grid -->
+            <div class="trial-stage-grid">
+                <!-- Left: Canvas / Visual Preview Stage -->
+                <div class="trial-canvas-col">
+                    <div class="trial-stage" id="trialStage">
+                        <!-- Model Background Layer -->
+                        <div class="trial-stage-backdrop">
+                            <img id="trialModelImg" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=700&q=80" alt="Model preview" class="trial-model-image">
+                            <div class="trial-stage-lighting"></div>
+                        </div>
+
+                        <!-- Garment Fitting Overlay Layer -->
+                        <div class="trial-garment-container" id="trialGarmentContainer">
+                            <img id="trialGarmentImg" src="" alt="Garment overlay" class="trial-garment-image">
+                        </div>
+
+                        <!-- Live Status Badges -->
+                        <div class="trial-status-badge">
+                            <span class="trial-live-dot"></span>
+                            <span id="trialBadgeText">Live Fit: Size M • Black</span>
+                        </div>
+
+                        <!-- Atelier Watermark -->
+                        <div class="trial-watermark">EPRIS VIRTUAL ATELIER</div>
+
+                        <!-- Interactive Nudge Overlay Controls -->
+                        <div class="trial-interactive-overlay-controls">
+                            <div class="trial-nudge-group">
+                                <button type="button" class="trial-nudge-btn" onclick="adjustGarmentPosition(0, -6)" title="Nudge Up">▲</button>
+                                <div class="trial-nudge-row">
+                                    <button type="button" class="trial-nudge-btn" onclick="adjustGarmentPosition(-6, 0)" title="Nudge Left">◀</button>
+                                    <button type="button" class="trial-nudge-btn reset-nudge" onclick="resetGarmentFit()" title="Reset Fit">↺</button>
+                                    <button type="button" class="trial-nudge-btn" onclick="adjustGarmentPosition(6, 0)" title="Nudge Right">▶</button>
+                                </div>
+                                <button type="button" class="trial-nudge-btn" onclick="adjustGarmentPosition(0, 6)" title="Nudge Down">▼</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stage Controls Toolbar -->
+                    <div class="trial-stage-toolbar">
+                        <div class="trial-slider-row">
+                            <label for="trialScaleSlider">Garment Scale:</label>
+                            <input type="range" id="trialScaleSlider" min="70" max="130" value="100" oninput="onScaleChange(this.value)">
+                            <span id="trialScaleVal">100%</span>
+                        </div>
+                        <div class="trial-slider-row">
+                            <label for="trialOpacitySlider">Fabric Blend:</label>
+                            <input type="range" id="trialOpacitySlider" min="50" max="100" value="92" oninput="onOpacityChange(this.value)">
+                            <span id="trialOpacityVal">92%</span>
+                        </div>
+                        <div class="trial-toolbar-actions">
+                            <button type="button" class="trial-toolbar-btn" onclick="takeSnapshot()">
+                                📸 Save Look Snapshot
+                            </button>
+                            <button type="button" class="trial-toolbar-btn" onclick="toggleBeforeAfter()">
+                                👁️ Toggle Garment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Controls & Try-On Options -->
+                <div class="trial-controls-col">
+                    <!-- Model / Photo Tabs -->
+                    <div class="trial-tab-header">
+                        <button type="button" class="trial-tab-btn active" id="tabPresetsBtn" onclick="switchTrialTab('presets')">
+                            🧍 Choose Model
+                        </button>
+                        <button type="button" class="trial-tab-btn" id="tabUploadBtn" onclick="switchTrialTab('upload')">
+                            📸 Upload Photo
+                        </button>
+                    </div>
+
+                    <!-- Tab 1: Presets -->
+                    <div class="trial-tab-content" id="tabPresetsContent">
+                        <p class="trial-instruction">Select a model build or silhouette:</p>
+                        <div class="trial-models-grid" id="trialModelsGrid">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Upload User Photo -->
+                    <div class="trial-tab-content" id="tabUploadContent" style="display: none;">
+                        <p class="trial-instruction">Upload your photo to test this garment directly on your frame:</p>
+                        <div class="trial-upload-dropzone" id="trialUploadDropzone" onclick="document.getElementById('trialPhotoInput').click()">
+                            <input type="file" id="trialPhotoInput" accept="image/*" style="display: none;" onchange="handleUserPhotoUpload(event)">
+                            <div class="trial-dropzone-inner">
+                                <span class="dropzone-icon">📷</span>
+                                <p class="dropzone-title">Click to upload or drag photo here</p>
+                                <p class="dropzone-hint">Supports JPG, PNG, WEBP</p>
+                            </div>
+                        </div>
+                        <div class="trial-privacy-notice">
+                            <span class="privacy-lock">🔒</span>
+                            <span><strong>100% Private & In-Browser:</strong> Photos are rendered locally on your device and never uploaded to remote servers.</span>
+                        </div>
+                        <div id="userPhotoControls" style="display: none; margin-top: 10px;">
+                            <button type="button" class="trial-btn-link" onclick="clearUserPhoto()">← Back to Default Studio Models</button>
+                        </div>
+                    </div>
+
+                    <!-- Garment Customization & Sizing Section -->
+                    <div class="trial-customization-section">
+                        <h4>Fit & Color Options</h4>
+                        
+                        <div class="trial-option-group">
+                            <label>Garment Color:</label>
+                            <div class="trial-color-options" id="trialColorOptions">
+                                <button type="button" class="trial-color-swatch active" style="background-color: #000;" onclick="selectTrialColor('Black', '#000')" title="Black"></button>
+                                <button type="button" class="trial-color-swatch" style="background-color: #fff; border: 1px solid #ccc;" onclick="selectTrialColor('White', '#fff')" title="White"></button>
+                                <button type="button" class="trial-color-swatch" style="background-color: #1e90ff;" onclick="selectTrialColor('Blue', '#1e90ff')" title="Blue"></button>
+                                <button type="button" class="trial-color-swatch" style="background-color: #ff6b6b;" onclick="selectTrialColor('Red', '#ff6b6b')" title="Red"></button>
+                                <button type="button" class="trial-color-swatch" style="background-color: #95a5a6;" onclick="selectTrialColor('Gray', '#95a5a6')" title="Gray"></button>
+                            </div>
+                            <span class="trial-selected-value" id="trialSelectedColorText">Selected: Black</span>
+                        </div>
+
+                        <div class="trial-option-group">
+                            <label>Garment Size:</label>
+                            <div class="trial-size-options" id="trialSizeOptions">
+                                <button type="button" class="trial-size-chip" onclick="selectTrialSize('XS')">XS</button>
+                                <button type="button" class="trial-size-chip" onclick="selectTrialSize('S')">S</button>
+                                <button type="button" class="trial-size-chip active" onclick="selectTrialSize('M')">M</button>
+                                <button type="button" class="trial-size-chip" onclick="selectTrialSize('L')">L</button>
+                                <button type="button" class="trial-size-chip" onclick="selectTrialSize('XL')">XL</button>
+                                <button type="button" class="trial-size-chip" onclick="selectTrialSize('XXL')">XXL</button>
+                            </div>
+                            <div class="trial-fit-advisory" id="trialFitAdvisory">
+                                <span class="fit-check-icon">✓</span>
+                                <span id="trialFitAdviceText">Size M provides an authentic tailored fit for standard build.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Action & Direct Checkout / Cart Box -->
+                    <div class="trial-footer-box">
+                        <div class="trial-pricing-summary">
+                            <div>
+                                <p class="trial-price-label">Product Total</p>
+                                <p class="trial-price-val" id="trialPriceDisplay">₹1,299</p>
+                            </div>
+                            <div class="trial-free-tag">
+                                <span>🎉 Free Virtual Trial</span>
+                                <small>Zero payment required</small>
+                            </div>
+                        </div>
+
+                        <div class="trial-action-buttons">
+                            <button type="button" class="trial-add-cart-btn" onclick="addFromTrialToCart()">
+                                🛒 Add to Cart with Selected Fit
+                            </button>
+                            <form method="dialog" style="margin: 0;">
+                                <button type="submit" class="trial-secondary-btn">Close Fitting Room</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </dialog>
+
+    <script src="api/products.js"></script>
+    <script src="script.js"></script>
+    <script>
+        let selectedColor = 'Black';
+        let selectedSize = 'M';
+        let selectedQuantity = 1;
+        let currentProductData = null;
+
+        // Virtual Trial State
+        let trialNudgeX = 0;
+        let trialNudgeY = 0;
+        let trialScale = 100;
+        let trialOpacity = 92;
+        let trialGarmentVisible = true;
+        let selectedModelId = 'm1';
+        let customUserPhoto = null;
+
+        const TRIAL_PRESET_MODELS = [
+            { id: 'm1', name: "Men's Athletic", category: 'Men', src: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=700&q=80', top: 22, left: 18, width: 64, height: 58 },
+            { id: 'm2', name: "Men's Casual", category: 'Men', src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=700&q=80', top: 24, left: 17, width: 66, height: 60 },
+            { id: 'w1', name: "Women's Chic", category: 'Women', src: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=700&q=80', top: 25, left: 19, width: 62, height: 58 },
+            { id: 'w2', name: "Women's Editorial", category: 'Women', src: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=700&q=80', top: 23, left: 18, width: 64, height: 60 },
+            { id: 'u1', name: "Studio Mannequin", category: 'All', src: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=700&q=80', top: 20, left: 16, width: 68, height: 62 }
+        ];
+
+        // Get product ID from URL
+        function getProductIdFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id') || '1';
+        }
+
+        function formatProductPrice(price) {
+            return `₹${Number(price).toLocaleString('en-IN')}`;
+        }
+
+        function loadProductDetails() {
+            const catalog = window.EPRISProductCatalog || [];
+            const productId = Number(getProductIdFromURL());
+            const product = catalog.find(item => item.id === productId) || catalog[0];
+            if (!product) return;
+
+            currentProductData = product;
+
+            document.title = `${product.name} | EPRIS Fashion Store`;
+            document.getElementById('productName').textContent = product.name;
+            document.getElementById('productTitle').textContent = product.name;
+            document.getElementById('breadcrumbCategory').textContent = product.category;
+            document.getElementById('productCategory').textContent = product.category;
+            document.getElementById('productDetailsName').textContent = product.name;
+            document.getElementById('productAvailability').textContent = product.inventory > 0
+                ? `${product.inventory} available`
+                : 'Currently unavailable';
+            document.getElementById('currentPrice').textContent = formatProductPrice(product.price);
+            document.getElementById('originalPrice').textContent = formatProductPrice(product.originalPrice);
+            document.getElementById('productDescription').textContent = product.description;
+            document.getElementById('mainImage').src = product.image;
+            document.getElementById('mainImage').alt = product.name;
+
+            const fitNoteEl = document.getElementById('productFitNote');
+            if (fitNoteEl) {
+                fitNoteEl.textContent = product.fitNote || 'Regular fit. Model is wearing size M.';
+            }
+
+            const discount = product.originalPrice > 0
+                ? Math.round((1 - product.price / product.originalPrice) * 100)
+                : 0;
+            document.getElementById('discount').textContent = `${discount}% OFF`;
+
+            const thumbnails = document.querySelector('.thumbnail-images');
+            thumbnails.style.gridTemplateColumns = 'repeat(auto-fill, minmax(76px, 100px))';
+            thumbnails.innerHTML = `
+                <button class="thumbnail-button active" type="button" aria-label="Show ${product.name}" onclick="changeImage(this)">
+                    <img class="thumbnail active" src="${product.image}" alt="">
+                </button>
+            `;
+
+            const relatedProducts = catalog
+                .filter(item => item.id !== product.id && item.category === product.category)
+                .concat(catalog.filter(item => item.id !== product.id && item.category !== product.category))
+                .slice(0, 4);
+            document.querySelector('.related-products-grid').innerHTML = relatedProducts.map(item => `
+                <div class="related-product-card">
+                    <img src="${item.image}" alt="${item.name}" loading="lazy">
+                    <h4>${item.name}</h4>
+                    <p class="price">${formatProductPrice(item.price)} <span class="original">${formatProductPrice(item.originalPrice)}</span></p>
+                    <button onclick="window.location.href='product-detail.html?id=${item.id}'">View Details</button>
+                </div>
+            `).join('');
+
+            document.getElementById('wishlistBtn').classList.toggle(
+                'in-wishlist',
+                (JSON.parse(localStorage.getItem('wishlist') || '[]'))
+                    .some(item => String(item.id) === String(product.id))
+            );
+
+            // Sync virtual trial modal defaults
+            document.getElementById('trialProductName').textContent = product.name;
+            document.getElementById('trialPriceDisplay').textContent = formatProductPrice(product.price);
+            document.getElementById('trialGarmentImg').src = product.image;
+
+            // Default model selection matching category
+            if (product.category === 'Women') {
+                selectedModelId = 'w1';
+            } else {
+                selectedModelId = 'm1';
+            }
+            renderPresetModels();
+        }
+
+        // Change main image
+        function changeImage(thumbnail) {
+            const thumbnailButton = thumbnail.closest('.thumbnail-button');
+            const thumbnailImage = thumbnailButton.querySelector('.thumbnail');
+            document.getElementById('mainImage').src = thumbnailImage.src;
+            document.getElementById('trialGarmentImg').src = thumbnailImage.src;
+            document.querySelectorAll('.thumbnail-button').forEach(button => {
+                button.classList.remove('active');
+                button.querySelector('.thumbnail').classList.remove('active');
+            });
+            thumbnailButton.classList.add('active');
+            thumbnailImage.classList.add('active');
+        }
+
+        // Color selection
+        function selectColor(btn, color) {
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedColor = color;
+            document.getElementById('selectedColor').textContent = color;
+            updateTrialColorUI(color);
+        }
+
+        // Size selection
+        function selectSize(btn, size) {
+            document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedSize = size;
+            document.getElementById('selectedSize').textContent = size;
+            updateTrialSizeUI(size);
+        }
+
+        // Quantity control
+        function increaseQuantity() {
+            const qty = document.getElementById('quantity');
+            if (qty.value < 10) qty.value = parseInt(qty.value) + 1;
+            selectedQuantity = parseInt(qty.value);
+        }
+
+        function decreaseQuantity() {
+            const qty = document.getElementById('quantity');
+            if (qty.value > 1) qty.value = parseInt(qty.value) - 1;
+            selectedQuantity = parseInt(qty.value);
+        }
+
+        // Add to cart
+        function addProductToCart() {
+            const product = {
+                id: getProductIdFromURL(),
+                name: document.getElementById('productName').textContent,
+                price: Number(document.getElementById('currentPrice').textContent.replace(/[₹,]/g, '')),
+                color: selectedColor,
+                size: selectedSize,
+                quantity: parseInt(document.getElementById('quantity').value, 10),
+                image: document.getElementById('mainImage').src
+            };
+
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const existingItem = cart.find(item => item.id === product.id && item.color === product.color && item.size === product.size);
+
+            if (existingItem) {
+                existingItem.quantity += product.quantity;
+            } else {
+                cart.push(product);
+            }
+
+            localStorage.setItem('cart', JSON.stringify(cart));
+            if (typeof updateCartCount === 'function') updateCartCount();
+            if (typeof showToast === 'function') {
+                showToast(`${product.quantity}x ${product.name} (${product.color}, ${product.size}) added to cart!`, 'success');
+            } else {
+                alert(`${product.name} (${product.color}, ${product.size}) added to cart!`);
+            }
+        }
+
+        // Add to wishlist
+        async function addToWishlist() {
+            const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+            const productId = getProductIdFromURL();
+            const catalogProduct = (window.EPRISProductCatalog || []).find(item => String(item.id) === String(productId));
+            const product = {
+                id: Number(productId),
+                name: document.getElementById('productName').textContent,
+                price: document.getElementById('currentPrice').textContent,
+                image: catalogProduct?.image || document.getElementById('mainImage').src
+            };
+
+            const exists = wishlist.find(item => Number(item.id) === Number(product.id));
+            if (!exists) {
+                wishlist.push(product);
+                localStorage.setItem('wishlist', JSON.stringify(wishlist));
+
+                if (typeof getAuthToken === 'function' && getAuthToken()) {
+                    try {
+                        await apiRequest('/wishlist/' + product.id, { method: 'POST' });
+                    } catch (e) {
+                        console.warn('Backend wishlist sync skipped:', e.message);
+                    }
+                }
+
+                if (typeof showToast === 'function') {
+                    showToast('Added to wishlist!', 'success');
+                } else {
+                    alert('Added to wishlist!');
+                }
+                document.getElementById('wishlistBtn').classList.add('in-wishlist');
+            } else {
+                if (typeof showToast === 'function') {
+                    showToast('Already in wishlist!', 'info');
+                } else {
+                    alert('Already in wishlist!');
+                }
+            }
+        }
+
+        // Toggle wishlist
+        function toggleWishlist() {
+            window.location.href = 'wishlist.html';
+        }
+
+        // ==========================================================================
+        // Free Virtual Trial / Fitting Room Logic
+        // ==========================================================================
+
+        function openVirtualTrial() {
+            const dialog = document.getElementById('virtualTrialDialog');
+            if (!dialog) return;
+
+            // Sync product image and details
+            const mainImg = document.getElementById('mainImage');
+            if (mainImg) {
+                document.getElementById('trialGarmentImg').src = mainImg.src;
+            }
+            if (currentProductData) {
+                document.getElementById('trialProductName').textContent = currentProductData.name;
+                document.getElementById('trialPriceDisplay').textContent = formatProductPrice(currentProductData.price);
+            }
+
+            updateTrialBadge();
+            renderPresetModels();
+            dialog.showModal();
+        }
+
+        function closeVirtualTrial() {
+            const dialog = document.getElementById('virtualTrialDialog');
+            if (dialog) dialog.close();
+        }
+
+        function renderPresetModels() {
+            const grid = document.getElementById('trialModelsGrid');
+            if (!grid) return;
+
+            grid.innerHTML = TRIAL_PRESET_MODELS.map(model => `
+                <div class="trial-model-card ${model.id === selectedModelId ? 'active' : ''}" onclick="selectTrialModel('${model.id}')">
+                    <img src="${model.src}" alt="${model.name}" class="trial-model-thumb" loading="lazy">
+                    <p class="trial-model-name">${model.name}</p>
+                </div>
+            `).join('');
+
+            const currentModel = TRIAL_PRESET_MODELS.find(m => m.id === selectedModelId) || TRIAL_PRESET_MODELS[0];
+            if (currentModel && !customUserPhoto) {
+                document.getElementById('trialModelImg').src = currentModel.src;
+                applyGarmentTransform();
+            }
+        }
+
+        function selectTrialModel(modelId) {
+            selectedModelId = modelId;
+            customUserPhoto = null;
+            document.getElementById('userPhotoControls').style.display = 'none';
+            renderPresetModels();
+        }
+
+        function switchTrialTab(tab) {
+            document.getElementById('tabPresetsBtn').classList.toggle('active', tab === 'presets');
+            document.getElementById('tabUploadBtn').classList.toggle('active', tab === 'upload');
+            document.getElementById('tabPresetsContent').style.display = tab === 'presets' ? 'block' : 'none';
+            document.getElementById('tabUploadContent').style.display = tab === 'upload' ? 'block' : 'none';
+        }
+
+        function handleUserPhotoUpload(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                customUserPhoto = e.target.result;
+                document.getElementById('trialModelImg').src = customUserPhoto;
+                document.getElementById('userPhotoControls').style.display = 'block';
+                document.querySelectorAll('.trial-model-card').forEach(c => c.classList.remove('active'));
+                if (typeof showToast === 'function') {
+                    showToast('Custom photo applied to fitting room!', 'success');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearUserPhoto() {
+            customUserPhoto = null;
+            document.getElementById('userPhotoControls').style.display = 'none';
+            renderPresetModels();
+        }
+
+        function selectTrialColor(color, hex) {
+            selectedColor = color;
+            updateTrialColorUI(color);
+            
+            // Also sync main page
+            const colorButtons = document.querySelectorAll('.color-btn');
+            colorButtons.forEach(btn => {
+                if (btn.title.toLowerCase() === color.toLowerCase()) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            document.getElementById('selectedColor').textContent = color;
+            updateTrialBadge();
+        }
+
+        function updateTrialColorUI(color) {
+            const swatches = document.querySelectorAll('.trial-color-swatch');
+            swatches.forEach(swatch => {
+                swatch.classList.toggle('active', swatch.title.toLowerCase() === color.toLowerCase());
+            });
+            const colorText = document.getElementById('trialSelectedColorText');
+            if (colorText) colorText.textContent = `Selected: ${color}`;
+
+            // Optional tint effect for visual distinction
+            const garment = document.getElementById('trialGarmentImg');
+            if (garment) {
+                if (color === 'White') {
+                    garment.style.filter = 'drop-shadow(0 8px 18px rgba(0,0,0,0.18)) brightness(1.25) contrast(0.95)';
+                } else if (color === 'Blue') {
+                    garment.style.filter = 'drop-shadow(0 8px 18px rgba(0,0,0,0.22)) hue-rotate(180deg) saturate(1.2)';
+                } else if (color === 'Red') {
+                    garment.style.filter = 'drop-shadow(0 8px 18px rgba(0,0,0,0.22)) hue-rotate(330deg) saturate(1.3)';
+                } else if (color === 'Gray') {
+                    garment.style.filter = 'drop-shadow(0 8px 18px rgba(0,0,0,0.2)) grayscale(0.85) brightness(1.1)';
+                } else {
+                    garment.style.filter = 'drop-shadow(0 8px 18px rgba(0,0,0,0.22))';
+                }
+            }
+        }
+
+        function selectTrialSize(size) {
+            selectedSize = size;
+            updateTrialSizeUI(size);
+
+            // Sync main page size buttons
+            document.querySelectorAll('.size-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.trim() === size);
+            });
+            document.getElementById('selectedSize').textContent = size;
+
+            // Adjust scale slightly based on size for authentic feel
+            const sizeScaleMap = {
+                'XS': 92,
+                'S': 96,
+                'M': 100,
+                'L': 104,
+                'XL': 108,
+                'XXL': 113
+            };
+            trialScale = sizeScaleMap[size] || 100;
+            document.getElementById('trialScaleSlider').value = trialScale;
+            document.getElementById('trialScaleVal').textContent = `${trialScale}%`;
+
+            applyGarmentTransform();
+            updateTrialBadge();
+        }
+
+        function updateTrialSizeUI(size) {
+            document.querySelectorAll('.trial-size-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.textContent.trim() === size);
+            });
+
+            const adviceMap = {
+                'XS': 'Size XS offers a sleek, close-fitting silhouette.',
+                'S': 'Size S fits snug through the shoulders with standard chest contour.',
+                'M': 'Size M provides an authentic tailored fit for standard builds.',
+                'L': 'Size L gives a generous, relaxed drape ideal for everyday movement.',
+                'XL': 'Size XL offers a streetwear-inspired relaxed fit with extra room.',
+                'XXL': 'Size XXL offers maximum comfort and generous chest room.'
+            };
+            const adviceEl = document.getElementById('trialFitAdviceText');
+            if (adviceEl) adviceEl.textContent = adviceMap[size] || 'Standard fit.';
+        }
+
+        function updateTrialBadge() {
+            const badge = document.getElementById('trialBadgeText');
+            if (badge) {
+                badge.textContent = `Live Fit: Size ${selectedSize} • ${selectedColor}`;
+            }
+        }
+
+        function adjustGarmentPosition(dx, dy) {
+            trialNudgeX += dx;
+            trialNudgeY += dy;
+            applyGarmentTransform();
+        }
+
+        function resetGarmentFit() {
+            trialNudgeX = 0;
+            trialNudgeY = 0;
+            trialScale = 100;
+            trialOpacity = 92;
+            trialGarmentVisible = true;
+            document.getElementById('trialScaleSlider').value = 100;
+            document.getElementById('trialScaleVal').textContent = '100%';
+            document.getElementById('trialOpacitySlider').value = 92;
+            document.getElementById('trialOpacityVal').textContent = '92%';
+            applyGarmentTransform();
+        }
+
+        function onScaleChange(val) {
+            trialScale = Number(val);
+            document.getElementById('trialScaleVal').textContent = `${trialScale}%`;
+            applyGarmentTransform();
+        }
+
+        function onOpacityChange(val) {
+            trialOpacity = Number(val);
+            document.getElementById('trialOpacityVal').textContent = `${trialOpacity}%`;
+            applyGarmentTransform();
+        }
+
+        function toggleBeforeAfter() {
+            trialGarmentVisible = !trialGarmentVisible;
+            const container = document.getElementById('trialGarmentContainer');
+            if (container) {
+                container.style.opacity = trialGarmentVisible ? (trialOpacity / 100).toString() : '0';
+            }
+        }
+
+        function applyGarmentTransform() {
+            const container = document.getElementById('trialGarmentContainer');
+            if (!container) return;
+
+            const scaleFactor = trialScale / 100;
+            container.style.transform = `translate(${trialNudgeX}px, ${trialNudgeY}px) scale(${scaleFactor})`;
+            if (trialGarmentVisible) {
+                container.style.opacity = (trialOpacity / 100).toString();
+            }
+        }
+
+        function addFromTrialToCart() {
+            addProductToCart();
+            closeVirtualTrial();
+        }
+
+        function takeSnapshot() {
+            const modelImg = document.getElementById('trialModelImg');
+            const garmentImg = document.getElementById('trialGarmentImg');
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 600;
+            canvas.height = 700;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#e8e7e1';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            try {
+                ctx.drawImage(modelImg, 0, 0, canvas.width, canvas.height);
+                
+                if (trialGarmentVisible) {
+                    ctx.save();
+                    ctx.globalAlpha = trialOpacity / 100;
+                    const scaleFactor = trialScale / 100;
+                    const baseW = canvas.width * 0.64 * scaleFactor;
+                    const baseH = canvas.height * 0.58 * scaleFactor;
+                    const posX = (canvas.width * 0.18) + (trialNudgeX * 1.5);
+                    const posY = (canvas.height * 0.22) + (trialNudgeY * 1.5);
+                    ctx.drawImage(garmentImg, posX, posY, baseW, baseH);
+                    ctx.restore();
+                }
+                
+                // Atelier Watermark footer
+                ctx.fillStyle = 'rgba(32, 33, 30, 0.88)';
+                ctx.fillRect(0, canvas.height - 38, canvas.width, 38);
+                ctx.fillStyle = '#d4fa42';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillText('EPRIS ATELIER • FREE VIRTUAL TRIAL', 18, canvas.height - 14);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px sans-serif';
+                ctx.fillText(`${selectedColor} | Size ${selectedSize}`, canvas.width - 120, canvas.height - 14);
+                
+                const link = document.createElement('a');
+                link.download = `epris-virtual-trial-${getProductIdFromURL()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                if (typeof showToast === 'function') {
+                    showToast('Try-on snapshot saved to your downloads!', 'success');
+                }
+            } catch (e) {
+                alert('Snapshot preview created! You can also take a screenshot of your look.');
+            }
+        }
+
+        // Light dismiss fallback for browsers without native `closedby` support
+        const trialDialogEl = document.getElementById('virtualTrialDialog');
+        if (trialDialogEl && !('closedBy' in HTMLDialogElement.prototype)) {
+            trialDialogEl.addEventListener('click', (event) => {
+                if (event.target !== trialDialogEl) return;
+                const rect = trialDialogEl.getBoundingClientRect();
+                const isContent = (
+                    rect.top <= event.clientY &&
+                    event.clientY <= rect.top + rect.height &&
+                    rect.left <= event.clientX &&
+                    event.clientX <= rect.left + rect.width
+                );
+                if (!isContent) {
+                    trialDialogEl.close();
+                }
+            });
+        }
+
+        // Initial catalog load
+        loadProductDetails();
+        loadProductReviews();
+
+        async function loadProductReviews() {
+            const productId = getProductIdFromURL();
+            try {
+                const data = await apiRequest('/products/' + productId + '/reviews');
+                if (!data) return;
+
+                const avgRatingEl = document.querySelector('.rating-box .big-rating');
+                const starsEl = document.querySelector('.rating-box .stars-small');
+                const countEl = document.querySelector('.rating-box .review-count');
+
+                if (avgRatingEl) avgRatingEl.textContent = Number(data.averageRating || 5.0).toFixed(1);
+                if (starsEl) starsEl.textContent = '⭐'.repeat(Math.round(data.averageRating || 5));
+                if (countEl) countEl.textContent = `Based on ${data.totalReviews || 0} review${data.totalReviews === 1 ? '' : 's'}`;
+
+                const listEl = document.getElementById('reviewsList');
+                if (!listEl) return;
+
+                if (!data.reviews || data.reviews.length === 0) {
+                    listEl.innerHTML = '<p style="color:#666;font-style:italic;padding:16px 0;">No reviews yet. Be the first to share your thoughts!</p>';
+                    return;
+                }
+
+                listEl.innerHTML = data.reviews.map(r => `
+                    <div class="review-item" style="border-bottom:1px solid #eef0f2;padding:16px 0;">
+                        <div class="review-header" style="display:flex;justify-content:space-between;align-items:center;">
+                            <p class="reviewer-name" style="font-weight:700;margin:0;">${escapeHTML(r.userName || 'Customer')} ${r.verifiedPurchase ? '<span style="color:#16a34a;font-size:11px;font-weight:600;margin-left:6px;">✓ Verified Buyer</span>' : ''}</p>
+                            <small class="review-date" style="color:#888;">${new Date(r.createdAt || Date.now()).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</small>
+                        </div>
+                        <p class="review-rating" style="margin:4px 0 6px 0;">${'⭐'.repeat(Number(r.rating || 5))}</p>
+                        ${r.title ? `<p class="review-title" style="font-weight:600;margin:0 0 4px 0;">${escapeHTML(r.title)}</p>` : ''}
+                        <p class="review-text" style="color:#444;line-height:1.6;margin:0;">${escapeHTML(r.comment || '')}</p>
+                    </div>
+                `).join('');
+
+                // Pre-fill user name if logged in
+                const userName = localStorage.getItem('userName');
+                const userEmail = localStorage.getItem('userEmail');
+                const nameInput = document.getElementById('reviewName');
+                const emailInput = document.getElementById('reviewEmail');
+                if (userName && nameInput && !nameInput.value) nameInput.value = userName;
+                if (userEmail && emailInput && !emailInput.value) emailInput.value = userEmail;
+            } catch (err) {
+                console.warn('Could not load reviews:', err.message);
+            }
+        }
+
+        // Submit review
+        document.getElementById('reviewForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const productId = getProductIdFromURL();
+            const rating = Number(document.getElementById('reviewRating').value);
+            const userName = document.getElementById('reviewName').value.trim();
+            const comment = document.getElementById('reviewText').value.trim();
+
+            if (!rating) {
+                alert('Please select a star rating');
+                return;
+            }
+
+            try {
+                await apiRequest('/products/' + productId + '/reviews', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        rating,
+                        title: 'Verified Customer Review',
+                        comment,
+                        userName
+                    })
+                });
+
+                if (typeof showToast === 'function') {
+                    showToast('Review submitted successfully! Thank you.', 'success');
+                } else {
+                    alert('Review submitted successfully!');
+                }
+
+                this.reset();
+                await loadProductReviews();
+            } catch (err) {
+                alert('Could not submit review: ' + err.message);
+            }
+        });
+</body>
+</html>

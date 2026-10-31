@@ -1,0 +1,79 @@
+const API_BASE_URL = (function() {
+    if (typeof window !== 'undefined') {
+        if (window.EPRIS_API_URL) return window.EPRIS_API_URL.replace(/\/+$/, '');
+        const stored = localStorage.getItem('API_URL');
+        if (stored) return stored.replace(/\/+$/, '');
+        if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return 'http://localhost:3000/api';
+        }
+        return `${window.location.origin}/api`;
+    }
+    return 'http://localhost:3000/api';
+})();
+
+function getAuthToken() {
+    return localStorage.getItem('authToken');
+}
+
+function getAuthHeaders() {
+    const token = getAuthToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+async function apiRequest(path, options = {}) {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders(),
+            ...(options.headers || {})
+        }
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(data.message || 'Request failed');
+    }
+    return data;
+}
+
+function saveAuthenticatedUser(data) {
+    localStorage.setItem('authToken', data.token);
+    localStorage.setItem('userId', data.user.id);
+    localStorage.setItem('userName', data.user.name);
+    localStorage.setItem('userEmail', data.user.email);
+    localStorage.setItem('userPhone', data.user.phone || '');
+    localStorage.setItem('userRole', data.user.role || 'customer');
+    if (data.user.googleLinked || (data.user.email && data.user.email.endsWith('@gmail.com'))) {
+        localStorage.setItem('isGoogleUser', 'true');
+    }
+    if (data.user.facebookLinked || (data.user.email && (data.user.email.includes('facebook') || data.user.email.startsWith('fb_')))) {
+        localStorage.setItem('isFacebookUser', 'true');
+    }
+}
+
+function clearAuthentication() {
+    ['authToken', 'userId', 'userName', 'userEmail', 'userPhone', 'userRole', 'isGoogleUser', 'isFacebookUser'].forEach(key => localStorage.removeItem(key));
+}
+
+async function requireAuthentication(redirect = 'login.html') {
+    if (!getAuthToken()) {
+        window.location.href = redirect;
+        return null;
+    }
+
+    try {
+        const data = await apiRequest('/auth/me');
+        saveAuthenticatedUser({ ...data, token: getAuthToken() });
+        return data.user;
+    } catch (error) {
+        clearAuthentication();
+        window.location.href = redirect;
+        return null;
+    }
+}
+
+async function logoutUser() {
+    clearAuthentication();
+    window.location.href = 'login.html';
+}

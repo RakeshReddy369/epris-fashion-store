@@ -1,0 +1,344 @@
+{
+  "users": [
+    {
+      "id": "usr_1788717286243_o7ohlx",
+      "name": "Demo User",
+      "email": "demo@example.com",
+      "phone": "9876543210",
+      "passwordHash": "$2a$12$SwBsLnsWXNevm6mbxhv6a.KLZwQLzpYCZQ27esuIWseO/VSG2Txtq",
+      "createdAt": "2026-09-06T17:54:46.883Z"
+    },
+    {
+      "id": "usr_1788717468774_nbbk6o",
+      "name": "Rakesh M",
+      "email": "rakeshreddy7170@gmail.com",
+      "phone": "7981512162",
+      "passwordHash": "$2a$12$SJ63GmqRazb1kzZMasS.OesHgBFwJVrI.P1Bun3SnUKC2OJYajNHO",
+      "createdAt": "2026-09-06T17:57:49.558Z"
+    },
+    {
+      "id": "usr_1788718055905_rs5573",
+      "name": "Final User",
+      "email": "final_1788718055833@example.com",
+      "phone": "9876543210",
+      "passwordHash": "$2a$12$F8nr6d9k8mNYZasfI9t61OOyJc7bX4CFzqH4GzNq0wFEy3gOj59AO",
+      "createdAt": "2026-09-06T18:07:36.280Z"
+    },
+    {
+      "id": "usr_1788718096613_rk7o2n",
+      "name": "Final User",
+      "email": "final_1788718096605@example.com",
+      "phone": "9876543210",
+      "passwordHash": "$2a$12$S.daB1.hWsra/m37EdX2ZOOtpQvQiM9tzF/n4JkPyT0BDgQEzdLMa",
+      "createdAt": "2026-09-06T18:08:16.978Z"
+    },
+    {
+      "id": "usr_1788718459144_9zmehl",
+      "name": "Flow User",
+      "email": "flow1788718459026@example.com",
+      "phone": "9876543210",
+      "passwordHash": "$2a$12$K2Xr9Qpy8PxEmMAYeEKyguU5Ihl5jAo8z2gt52bf0heqBJWxpFO66",
+      "createdAt": "2026-09-06T18:14:19.556Z"
+    },
+    {
+      "id": "usr_1788718547501_67m0o3",
+      "name": "E2E Test User",
+      "email": "e2e1788718547491@example.com",
+      "phone": "9876543210",
+      "passwordHash": "$2a$12$YUCKa9R/Pg1YKDBXI.uyX.PCz6Z4A4DjFvriHnne2pnb8Z0.T6BzK",
+      "createdAt": "2026-09-06T18:15:47.861Z"
+    },
+    {
+      "id": "usr_1788718558800_jdpku9",
+      "name": "E2E Test User",
+      "email": "e2e1788718558787@example.com",
+      "phone": "9876543210",
+      "passwordHash": "$2a$12$nwkr1vvLX/HL2qglhPaHYO/Pf90US0cNMrioKw72D7r.gtNxEKxOC",
+      "createdAt": "2026-09-06T18:15:59.168Z"
+    },
+    {
+      "id": "usr_1788718733668_ue7e2a",
+      "name": "Profile Test User",
+      "email": "profile1788718733659@example.com",
+      "phone": "9876543210",
+      "passwordHash": "$2a$12$APWfwkDwB3XJ3MeeqMxQZ.HMWrHlei76yF3JK6NdO9XdGxZKG1Ha.",
+      "createdAt": "2026-09-06T18:18:54.026Z"
+    },
+    {
+      "id": "usr_1793436779674_mygmlq",
+      "name": "Admin",
+      "email": "admin@epris.com",
+      "phone": "",
+      "passwordHash": "$2a$12$.cdntJkKhxG5qKWWA5bozOJToPJPxUDQHUhZEN/zYyIueyF.kuxL.",
+      "role": "admin",
+      "addresses": [],
+      "createdAt": "2026-10-31T08:53:00.036Z"
+    },
+    {
+      "id": "usr_1793438002691_1h7dkq",
+      "name": "Test Google User",
+      "email": "test.google.user@example.com",
+      "phone": "",
+      "passwordHash": "",
+      "googleId": "g_sub_746573742e676f6f",
+      "role": "customer",
+      "addresses": [],
+      "createdAt": "2026-10-31T09:13:22.691Z"
+    }
+  ],
+  "carts": [
+    {
+      "userId": "usr_1788718096613_rk7o2n",
+      "items": []
+    },
+    {
+      "userId": "usr_1788718558800_jdpku9",
+      "items": []
+    }
+  ],
+  "wishlists": [
+    {
+      "userId": "usr_1793438002691_1h7dkq",
+      "productIds": []
+    }
+  ],
+  "orders": [
+    {
+      "id": "ord_1788718199127_fnd7kk",
+      "userId": "usr_1788718096613_rk7o2n",
+      "items": [
+        {
+          "productId": 1,
+          "name": "Premium Casual T-Shirt",
+          "price": 1299,
+          "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30",
+          "color": "Black",
+          "size": "M",
+          "quantity": 2
+        }
+      ],
+      "address": {
+        "name": "Final User",
+        "phone": "9876543210",
+        "street": "MG Road",
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "zip": "560001"
+      },
+      "delivery": {
+        "type": "standard",
+        "cost": 100
+      },
+      "payment": {
+        "type": "cod"
+      },
+      "subtotal": 2598,
+      "tax": 260,
+      "shipping": 100,
+      "total": 2958,
+      "status": "Pending",
+      "createdAt": "2026-09-06T18:09:59.127Z"
+    },
+    {
+      "id": "ord_1788718205395_7r1bli",
+      "userId": "usr_1788718096613_rk7o2n",
+      "items": [
+        {
+          "productId": 1,
+          "name": "Premium Casual T-Shirt",
+          "price": 1299,
+          "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30",
+          "color": "Black",
+          "size": "M",
+          "quantity": 1
+        }
+      ],
+      "address": {
+        "name": "Final User",
+        "phone": "9876543210",
+        "street": "MG Road",
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "zip": "560001"
+      },
+      "delivery": {
+        "type": "standard",
+        "cost": 100
+      },
+      "payment": {
+        "type": "cod"
+      },
+      "subtotal": 1299,
+      "tax": 130,
+      "shipping": 100,
+      "total": 1529,
+      "status": "Pending",
+      "createdAt": "2026-09-06T18:10:05.395Z"
+    },
+    {
+      "id": "ord_1788718272915_em0hql",
+      "userId": "usr_1788718096613_rk7o2n",
+      "items": [
+        {
+          "productId": 1,
+          "name": "Premium Casual T-Shirt",
+          "price": 1299,
+          "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30",
+          "color": "Black",
+          "size": "M",
+          "quantity": 1
+        }
+      ],
+      "address": {
+        "name": "Final User",
+        "phone": "9876543210",
+        "street": "MG Road",
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "zip": "560001"
+      },
+      "delivery": {
+        "type": "standard",
+        "cost": 100
+      },
+      "payment": {
+        "type": "cod"
+      },
+      "subtotal": 1299,
+      "tax": 130,
+      "shipping": 100,
+      "total": 1529,
+      "status": "Pending",
+      "createdAt": "2026-09-06T18:11:12.915Z"
+    },
+    {
+      "id": "ord_1788718598640_gvl6av",
+      "userId": "usr_1788718558800_jdpku9",
+      "items": [
+        {
+          "productId": 1,
+          "name": "Premium Casual T-Shirt",
+          "price": 1299,
+          "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30",
+          "color": "Black",
+          "size": "M",
+          "quantity": 1
+        }
+      ],
+      "address": {
+        "name": "E2E Test User",
+        "phone": "9876543210",
+        "street": "123 Tech Avenue",
+        "city": "Bangalore",
+        "state": "Karnataka",
+        "zip": "560001"
+      },
+      "delivery": {
+        "type": "express",
+        "cost": 200
+      },
+      "payment": {
+        "type": "cod"
+      },
+      "subtotal": 1299,
+      "tax": 130,
+      "shipping": 200,
+      "total": 1629,
+      "status": "Delivered",
+      "createdAt": "2026-09-06T18:16:38.640Z"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "rev_1_1",
+      "productId": 1,
+      "userName": "Aryan Sharma",
+      "rating": 5,
+      "title": "Incredible everyday quality",
+      "comment": "The cotton feels extremely premium and breathable. After multiple washes, the color and collar shape stayed pristine.",
+      "verifiedPurchase": true,
+      "createdAt": "2026-10-19T09:32:48.775Z"
+    },
+    {
+      "id": "rev_1_2",
+      "productId": 1,
+      "userName": "Priya Patel",
+      "rating": 4,
+      "title": "Great fit and comfort",
+      "comment": "Ordered size M, fits true to standard size. Super comfortable for Bangalore weather.",
+      "verifiedPurchase": true,
+      "createdAt": "2026-10-23T09:32:48.798Z"
+    },
+    {
+      "id": "rev_1_3",
+      "productId": 1,
+      "userName": "Vikram Malhotra",
+      "rating": 5,
+      "title": "Best casual tee this season",
+      "comment": "Flawless minimalist aesthetic. EPRIS has outdone themselves with this fabric.",
+      "verifiedPurchase": true,
+      "createdAt": "2026-10-28T09:32:48.798Z"
+    },
+    {
+      "id": "rev_2_1",
+      "productId": 2,
+      "userName": "Rahul Sen",
+      "rating": 5,
+      "title": "Sharp and elegant",
+      "comment": "Perfect for business casual Fridays. Clean collar line and high density weave.",
+      "verifiedPurchase": true,
+      "createdAt": "2026-10-16T09:32:48.798Z"
+    },
+    {
+      "id": "rev_3_1",
+      "productId": 3,
+      "userName": "Kabir Khan",
+      "rating": 5,
+      "title": "Timeless denim trucker",
+      "comment": "Heavyweight genuine denim with sturdy metal hardware. Layers beautifully over a hoodie.",
+      "verifiedPurchase": true,
+      "createdAt": "2026-10-11T09:32:48.798Z"
+    },
+    {
+      "id": "rev_6_1",
+      "productId": 6,
+      "userName": "Sneha Joshi",
+      "rating": 5,
+      "title": "Flattering summer dress",
+      "comment": "Flowy, light, and very flattering on all angles. Received so many compliments!",
+      "verifiedPurchase": true,
+      "createdAt": "2026-10-17T09:32:48.798Z"
+    },
+    {
+      "id": "rev_8_1",
+      "productId": 8,
+      "userName": "Ananya Roy",
+      "rating": 5,
+      "title": "Structured and commanding",
+      "comment": "High end boardroom chic. The shoulders have just the right amount of structure.",
+      "verifiedPurchase": true,
+      "createdAt": "2026-10-21T09:32:48.799Z"
+    },
+    {
+      "id": "rev_9_1",
+      "productId": 9,
+      "userName": "Rohan Das",
+      "rating": 5,
+      "title": "All-day walking comfort",
+      "comment": "Cushioned sole and sleek profile. My daily go-to pair now.",
+      "verifiedPurchase": true,
+      "createdAt": "2026-10-25T09:32:48.799Z"
+    },
+    {
+      "id": "rev_1793439530032_q7bx6f",
+      "productId": 1,
+      "userId": "",
+      "userName": "Test Critic",
+      "rating": 5,
+      "title": "Outstanding quality",
+      "comment": "Best t-shirt ever made, highly recommended!",
+      "verifiedPurchase": true,
+      "createdAt": "2026-10-31T09:38:50.032Z"
+    }
+  ]
+}

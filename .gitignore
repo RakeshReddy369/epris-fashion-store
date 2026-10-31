@@ -1,0 +1,28 @@
+# Node dependencies
+node_modules/
+WEB-INF/node_modules/
+WEB-INF/api/node_modules/
+
+# Environment and sensitive keys
+.env
+.env.local
+.env.*.local
+WEB-INF/api/.env
+
+# Logs and runtime data
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor folders
+.vscode/
+.idea/
+*.swp
+*.swo

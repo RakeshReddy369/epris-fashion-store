@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | EPRIS</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin.css">
+    <script src="api-client.js"></script>
+    <script src="admin.js" defer></script>
+</head>
+<body class="admin-page">
+    <header>
+        <nav class="navbar">
+            <div class="logo">EPRIS <span class="admin-mark">ADMIN</span></div>
+            <div class="admin-nav-actions">
+                <a href="index.html">View Store</a>
+                <button type="button" onclick="logoutAdmin()">Logout</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="admin-shell">
+        <section class="admin-heading">
+            <div>
+                <p class="admin-kicker">OPERATIONS CENTER</p>
+                <h1>Store dashboard</h1>
+                <p>Manage products, stock, customers, and fulfillment from one place.</p>
+            </div>
+            <button class="admin-primary" type="button" onclick="openProductForm()">+ Add product</button>
+        </section>
+
+        <section class="admin-stats" aria-label="Store statistics">
+            <article><span>Products</span><strong id="productCount">0</strong></article>
+            <article><span>Customers</span><strong id="customerCount">0</strong></article>
+            <article><span>Orders</span><strong id="orderCount">0</strong></article>
+            <article><span>Revenue</span><strong id="revenueTotal">₹0</strong></article>
+        </section>
+
+        <div id="adminMessage" class="admin-message" role="status"></div>
+        <nav class="admin-tabs" aria-label="Admin sections">
+            <button class="active" data-panel="productsPanel">Products & inventory</button>
+            <button data-panel="ordersPanel">Orders</button>
+            <button data-panel="customersPanel">Customers</button>
+        </nav>
+
+        <section id="productsPanel" class="admin-panel active">
+            <div class="panel-heading"><div><h2>Products & inventory</h2><p>Update pricing, catalog details, and stock levels.</p></div><button type="button" class="admin-secondary" onclick="loadProducts()">Refresh</button></div>
+            <div class="admin-table-wrap"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Inventory</th><th>Actions</th></tr></thead><tbody id="productsTable"></tbody></table></div>
+        </section>
+
+        <section id="ordersPanel" class="admin-panel">
+            <div class="panel-heading"><div><h2>Orders</h2><p>Review customer purchases and update fulfillment status.</p></div><button type="button" class="admin-secondary" onclick="loadOrders()">Refresh</button></div>
+            <div class="admin-table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th></tr></thead><tbody id="ordersTable"></tbody></table></div>
+        </section>
+
+        <section id="customersPanel" class="admin-panel">
+            <div class="panel-heading"><div><h2>Customers</h2><p>View registered customers and their purchase activity.</p></div><button type="button" class="admin-secondary" onclick="loadCustomers()">Refresh</button></div>
+            <div class="admin-table-wrap"><table><thead><tr><th>Customer</th><th>Contact</th><th>Orders</th><th>Total spent</th><th>Joined</th></tr></thead><tbody id="customersTable"></tbody></table></div>
+        </section>
+    </main>
+
+    <dialog id="productDialog" class="product-dialog">
+        <form method="dialog" id="productForm" onsubmit="saveProduct(event)">
+            <div class="dialog-heading"><div><p class="admin-kicker">CATALOG EDITOR</p><h2 id="productDialogTitle">Add product</h2></div><button type="button" class="dialog-close" onclick="closeProductForm()">&times;</button></div>
+            <input type="hidden" id="productId">
+            <div class="admin-form-grid">
+                <label>Name<input id="productName" required></label>
+                <label>Category<input id="productCategory" required></label>
+                <label>Price (INR)<input id="productPrice" type="number" min="0" required></label>
+                <label>Original price (INR)<input id="productOriginalPrice" type="number" min="0" required></label>
+                <label>Inventory<input id="productInventory" type="number" min="0" required></label>
+                <label>Image URL<input id="productImage" type="url" required></label>
+                <label class="full-field">Description<textarea id="productDescription" rows="4" required></textarea></label>
+            </div>
+            <div class="dialog-actions"><button type="button" class="admin-secondary" onclick="closeProductForm()">Cancel</button><button class="admin-primary" type="submit">Save product</button></div>
+        </form>
+    </dialog>
+</body>
+</html>

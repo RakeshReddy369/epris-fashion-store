@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f0efe9">
+    <title>Login | EPRIS Fashion Store</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="signup-concept.css">
+    <link rel="stylesheet" href="login-concept.css">
+</head>
+
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="logo">
+                <a href="index.html" style="text-decoration: none; color: inherit;">EPRIS</a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#men">Men</a></li>
+                <li><a href="index.html#women">Women</a></li>
+                <li><a href="index.html#new">New Arrivals</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+            <div class="nav-icons">
+                <button onclick="window.location.href='index.html'" aria-label="Go to home">🏠</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="concept-page login-concept-page">
+        <div class="concept-topline">
+            <span>EPRIS / YOUR ACCOUNT</span>
+            <span>WELCOME BACK</span>
+        </div>
+
+        <section class="concept-layout" aria-labelledby="login-title">
+            <div class="concept-intro">
+                <p class="concept-kicker"><span></span> Your EPRIS edit</p>
+                <h1 id="login-title">Your style,<br>right where you <em>left it.</em></h1>
+                <p class="concept-description">Sign in to revisit your saved pieces, track your orders, and discover what’s new.</p>
+                <div class="concept-note">
+                    <span class="concept-note-number">EPRIS</span>
+                    <span>Pick up where you left off.<br>Your next favorite is waiting.</span>
+                </div>
+            </div>
+
+            <div class="concept-form-panel">
+                <div class="concept-form-heading">
+                    <div>
+                        <p class="concept-kicker">Good to have you back</p>
+                        <h2>Sign in to EPRIS</h2>
+                    </div>
+                </div>
+
+                <form id="loginForm">
+                    <div class="concept-fields">
+                        <div class="concept-field">
+                            <label for="email">Email address</label>
+                            <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+                        </div>
+                        <div class="concept-field">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+                        </div>
+                    </div>
+
+                    <div class="login-concept-options">
+                        <label class="login-concept-remember" for="remember">
+                            <input type="checkbox" name="remember" id="remember">
+                            <span>Remember me</span>
+                        </label>
+                        <a href="#" class="login-concept-forgot">Forgot password?</a>
+                    </div>
+
+                    <button class="concept-submit" type="submit">
+                        <span>Sign in</span>
+                        <span aria-hidden="true">↗</span>
+                    </button>
+                </form>
+
+                <div class="concept-or"><span>OR SIGN IN WITH</span></div>
+
+                <div class="concept-social">
+                    <div class="login-google-button" id="googleSignInButton">
+                        <button type="button" id="googleSignInActionBtn" onclick="signInWithGooglePrompt()" style="width:100%;height:42px;background:#ffffff;border:1px solid #dadce0;border-radius:4px;color:#3c4043;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,0.15);transition:background 0.2s;">
+                            <svg width="18" height="18" viewBox="0 0 18 18" style="flex-shrink:0;"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
+                            <span style="color:#3c4043;font-size:13px;font-weight:600;">Google</span>
+                        </button>
+                    </div>
+                    <button type="button" id="facebookSignInButton" onclick="loginWithFacebook()" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#1877F2;color:#ffffff;border:none;border-radius:4px;padding:0 14px;min-height:42px;font-size:13px;font-weight:600;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;box-shadow:0 1px 2px rgba(0,0,0,0.15);width:100%;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff" style="flex-shrink:0;"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        <span style="color:#ffffff;font-size:13px;font-weight:600;">Facebook</span>
+                    </button>
+                </div>
+                <p class="login-google-status" id="googleSignInStatus" role="status" aria-live="polite"></p>
+
+                <p class="concept-login">New to EPRIS? <a href="signup.html">Create an account</a></p>
+            </div>
+        </section>
+
+        <footer class="concept-footer">
+            <span>GOOD THINGS ARE IN STYLE.</span>
+            <span>© EPRIS FASHION STORE</span>
+        </footer>
+    </main>
+
+    <script src="api-client.js"></script>
+    <script src="script.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const remember = document.getElementById('remember').checked;
+
+            apiRequest('/auth/login', {
+                method: 'POST',
+                body: JSON.stringify({ email, password })
+            })
+                .then(data => {
+                    saveAuthenticatedUser(data);
+                    if (remember) localStorage.setItem('rememberEmail', email);
+                    alert('Login successful! Welcome to EPRIS.');
+                    window.location.href = data.user.role === 'admin' ? 'admin.html' : 'profile.html';
+                })
+                .catch(error => alert(error.message));
+        });
+
+        function loadGoogleIdentityServices() {
+            if (window.google && window.google.accounts) return Promise.resolve();
+
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://accounts.google.com/gsi/client';
+                script.async = true;
+                script.onload = resolve;
+                script.onerror = () => reject(new Error('Could not load Google sign-in. Check your internet connection and try again.'));
+                document.head.appendChild(script);
+            });
+        }
+
+        async function handleGoogleCredential(response) {
+            const status = document.getElementById('googleSignInStatus');
+            status.textContent = 'Signing in with Google...';
+
+            try {
+                const data = await apiRequest('/auth/google', {
+                    method: 'POST',
+                    body: JSON.stringify({ credential: response.credential })
+                });
+                saveAuthenticatedUser(data);
+                if (document.getElementById('remember').checked) {
+                    localStorage.setItem('rememberEmail', data.user.email);
+                }
+                window.location.href = data.user.role === 'admin' ? 'admin.html' : 'profile.html';
+            } catch (error) {
+                showGoogleSignInError(error);
+            }
+        }
+
+        function showGoogleSignInError(error) {
+            const status = document.getElementById('googleSignInStatus');
+            status.textContent = error.message === 'Failed to fetch'
+                ? 'Could not connect to the sign-in service. Start the API and reload this page.'
+                : error.message;
+        }
+
+        async function signInWithGooglePrompt() {
+            const status = document.getElementById('googleSignInStatus');
+            const isFileOrigin = window.location.protocol === 'file:';
+            const email = prompt(isFileOrigin
+                ? 'Enter your Google email for demo sign-in:\n(Tip: Run "npm start" and open http://localhost:3000 to use live Google popup OAuth)'
+                : 'Enter your Google email for demo sign-in:', 'google.user@epris.com');
+            if (!email) return;
+            const name = prompt('Enter your name:', 'Google User');
+            try {
+                if (status) status.textContent = 'Signing in with Google...';
+                const data = await apiRequest('/auth/google', {
+                    method: 'POST',
+                    body: JSON.stringify({ credential: 'demo_token_' + Date.now(), email: email.trim(), name: (name || 'Google User').trim() })
+                });
+                saveAuthenticatedUser(data);
+                if (document.getElementById('remember')?.checked) {
+                    localStorage.setItem('rememberEmail', data.user.email);
+                }
+                alert('Signed in with Google! Welcome, ' + data.user.name + '.');
+                window.location.href = data.user.role === 'admin' ? 'admin.html' : 'profile.html';
+            } catch (err) {
+                showGoogleSignInError(err);
+            }
+        }
+
+        async function initializeGoogleSignIn() {
+            const button = document.getElementById('googleSignInButton');
+            const status = document.getElementById('googleSignInStatus');
+
+            // If running on file:// protocol, Google GSI cannot load because Google forbids file:// origin
+            if (window.location.protocol === 'file:') {
+                if (status) status.innerHTML = '<small style="color:#888;">Opened via local file. Click button for Demo Sign-In, or use <code>npm start</code> (http://localhost:3000) for live OAuth.</small>';
+                return;
+            }
+
+            try {
+                const { clientId } = await apiRequest('/auth/google/config');
+                if (!clientId || clientId.startsWith('your-')) {
+                    if (status) status.innerHTML = '<small style="color:#888;">Tip: Set <code>GOOGLE_CLIENT_ID</code> in <code>api/.env</code> for live One-Tap.</small>';
+                    return;
+                }
+
+                await loadGoogleIdentityServices();
+                button.replaceChildren();
+                google.accounts.id.initialize({
+                    client_id: clientId,
+                    callback: handleGoogleCredential
+                });
+                google.accounts.id.renderButton(button, {
+                    type: 'standard',
+                    theme: 'filled_black',
+                    size: 'large',
+                    text: 'signin_with',
+                    shape: 'rectangular',
+                    width: 190
+                });
+            } catch (error) {
+                console.warn('Google sign-in auto-init fallback:', error);
+                const actionBtn = document.getElementById('googleSignInActionBtn');
+                if (actionBtn) {
+                    actionBtn.onclick = signInWithGooglePrompt;
+                }
+            }
+        }
+
+                let facebookConfig = null;
+
+        async function initializeFacebookSignIn() {
+            try {
+                const config = await apiRequest('/auth/facebook/config');
+                facebookConfig = config;
+
+                if (config && config.configured && config.appId) {
+                    window.fbAsyncInit = function() {
+                        FB.init({
+                            appId: config.appId,
+                            cookie: true,
+                            xfbml: true,
+                            version: 'v19.0'
+                        });
+                    };
+                    if (!document.getElementById('facebook-jssdk')) {
+                        const js = document.createElement('script');
+                        js.id = 'facebook-jssdk';
+                        js.src = 'https://connect.facebook.net/en_US/sdk.js';
+                        js.async = true;
+                        js.defer = true;
+                        document.head.appendChild(js);
+                    }
+                }
+            } catch (err) {
+                console.warn('Facebook sign-in config error:', err);
+            }
+        }
+
+        async function loginWithFacebook() {
+            const status = document.getElementById('googleSignInStatus');
+
+            // If live Facebook App ID is configured and SDK is loaded
+            if (facebookConfig && facebookConfig.configured && window.FB) {
+                if (status) status.textContent = 'Connecting to Facebook...';
+                FB.login(async function(response) {
+                    if (response.authResponse && response.authResponse.accessToken) {
+                        if (status) status.textContent = 'Verifying Facebook credentials...';
+                        try {
+                            const data = await apiRequest('/auth/facebook', {
+                                method: 'POST',
+                                body: JSON.stringify({ accessToken: response.authResponse.accessToken })
+                            });
+                            saveAuthenticatedUser(data);
+                            if (document.getElementById('remember')?.checked) {
+                                localStorage.setItem('rememberEmail', data.user.email);
+                            }
+                            window.location.href = data.user.role === 'admin' ? 'admin.html' : 'profile.html';
+                        } catch (err) {
+                            showGoogleSignInError(err);
+                        }
+                    } else {
+                        if (status) status.textContent = 'Facebook sign-in was cancelled.';
+                    }
+                }, { scope: 'public_profile,email' });
+                return;
+            }
+
+            // Demo Mode fallback (when FACEBOOK_APP_ID is not yet set in api/.env)
+            const email = prompt('Enter your Facebook email for demo sign-in:\n(Tip: Set FACEBOOK_APP_ID in api/.env to enable live Facebook OAuth)', 'facebook.user@epris.com');
+            if (!email) return;
+            const name = prompt('Enter your full name:', 'Facebook User');
+
+            try {
+                if (status) status.textContent = 'Signing in with Facebook (Demo)...';
+                const data = await apiRequest('/auth/facebook', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        credential: 'demo_token_' + Date.now(),
+                        email: email.trim(),
+                        name: (name || 'Facebook User').trim()
+                    })
+                });
+                saveAuthenticatedUser(data);
+                if (document.getElementById('remember')?.checked) {
+                    localStorage.setItem('rememberEmail', data.user.email);
+                }
+                alert('Signed in with Facebook (Demo Mode)! Welcome, ' + data.user.name + '.');
+                window.location.href = data.user.role === 'admin' ? 'admin.html' : 'profile.html';
+            } catch (err) {
+                showGoogleSignInError(err);
+            }
+        }
+
+        initializeGoogleSignIn();
+        initializeFacebookSignIn();
+    </script>
+</body>
+
+</html>

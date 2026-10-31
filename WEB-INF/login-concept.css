@@ -1,0 +1,87 @@
+.login-concept-page .concept-layout {
+    grid-template-columns: minmax(0, 0.9fr) minmax(420px, 1.1fr);
+}
+
+.login-concept-page .concept-fields {
+    grid-template-columns: 1fr;
+    gap: 22px;
+}
+
+.login-concept-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 24px 0;
+    color: #b7b8ae;
+    font-size: 11px;
+}
+
+.login-google-button {
+    display: flex;
+    min-height: 42px;
+    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    color: #b7b8ae;
+    font-size: 10px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.login-google-button iframe {
+    max-width: 100%;
+}
+
+.login-google-status {
+    min-height: 16px;
+    margin: 9px 0 0;
+    color: #d4fa42;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.login-concept-remember {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+}
+
+.login-concept-remember input {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    accent-color: #d4fa42;
+}
+
+.login-concept-forgot {
+    color: #d4fa42;
+    text-decoration: none;
+}
+
+.login-concept-forgot:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 1000px) {
+    .login-concept-page .concept-layout {
+        grid-template-columns: minmax(0, 0.8fr) minmax(400px, 1.2fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .login-concept-page .concept-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 500px) {
+    .login-concept-page .concept-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .login-concept-options {
+        align-items: flex-start;
+    }
+}

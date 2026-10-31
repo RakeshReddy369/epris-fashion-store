@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EPRIS | Fashion Store</title>
+
+    <link rel="stylesheet" href="style.css">
+    <script src="interactive-features.js" defer></script>
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <header>
+        <nav class="navbar">
+
+            <div class="logo">
+                EPRIS
+            </div>
+
+            <ul class="nav-links">
+                <li><a href="#">Home</a></li>
+                <li><a href="#men">Men</a></li>
+                <li><a href="#women">Women</a></li>
+                <li><a href="#new">New Arrivals</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+
+            <div class="nav-icons">
+                <button onclick="searchProduct()">🔍</button>
+                <button onclick="showCart()">🛒</button>
+                <button onclick="login()">👤</button>
+            </div>
+
+        </nav>
+    </header>
+
+
+    <!-- Hero Section -->
+    <section class="hero">
+
+        <div class="hero-content">
+
+            <p class="small-text">
+                NEW COLLECTION 2026
+            </p>
+
+            <h1>
+                DEFINE<br>
+                YOUR STYLE
+            </h1>
+
+            <p>
+                Discover fashion that matches your personality.
+                Simple. Modern. Confident.
+            </p>
+
+            <div class="hero-buttons">
+                <button onclick="shopMen()">
+                    SHOP MEN
+                </button>
+
+                <button onclick="shopWomen()">
+                    SHOP WOMEN
+                </button>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- Categories -->
+    <section class="categories">
+
+        <h2>SHOP BY CATEGORY</h2>
+
+        <div class="category-container">
+
+            <div class="category-card">
+                <div class="category-image men-image"></div>
+                <h3>MEN</h3>
+                <button>SHOP NOW</button>
+            </div>
+
+            <div class="category-card">
+                <div class="category-image women-image"></div>
+                <h3>WOMEN</h3>
+                <button>SHOP NOW</button>
+            </div>
+
+            <div class="category-card">
+                <div class="category-image shoes-image"></div>
+                <h3>SHOES</h3>
+                <button>SHOP NOW</button>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- New Arrivals -->
+    <section class="products" id="new">
+
+        <h2>NEW ARRIVALS</h2>
+
+        <div class="product-container">
+
+            <div class="product-card">
+
+                <div class="product-image product1">
+                    <span>NEW</span>
+                </div>
+
+                <div class="product-info">
+                    <h3><a href="product-detail.html?id=1">Premium Casual T-Shirt</a></h3>
+                    <p>Premium Cotton</p>
+                    <h4>₹1,299</h4>
+
+                    <button onclick="viewProduct(1)">
+                        VIEW DETAILS
+                    </button>
+                </div>
+
+            </div>
+
+
+            <div class="product-card">
+
+                <div class="product-image product2">
+                    <span>NEW</span>
+                </div>
+
+                <div class="product-info">
+                    <h3><a href="product-detail.html?id=3">Denim Jacket</a></h3>
+                    <p>Premium Denim</p>
+                    <h4>₹1,799</h4>
+
+                    <button onclick="viewProduct(3)">
+                        VIEW DETAILS
+                    </button>
+                </div>
+
+            </div>
+
+
+            <div class="product-card">
+
+                <div class="product-image product3">
+                    <span>NEW</span>
+                </div>
+
+                <div class="product-info">
+                    <h3><a href="product-detail.html?id=9">Classic Sneakers</a></h3>
+                    <p>Everyday Comfort</p>
+                    <h4>₹1,999</h4>
+
+                    <button onclick="viewProduct(9)">
+                        VIEW DETAILS
+                    </button>
+                </div>
+
+            </div>
+
+
+            <div class="product-card">
+
+                <div class="product-image product4">
+                    <span>NEW</span>
+                </div>
+
+                <div class="product-info">
+                    <h3><a href="product-detail.html?id=5">Premium Hoodie</a></h3>
+                    <p>Soft Fleece</p>
+                    <h4>₹1,499</h4>
+
+                    <button onclick="viewProduct(5)">
+                        VIEW DETAILS
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- Offer Section -->
+    <section class="offer">
+
+        <div>
+            <p>LIMITED TIME OFFER</p>
+
+            <h2>
+                UP TO 50% OFF
+            </h2>
+
+            <p>
+                Upgrade your wardrobe with our latest collection.
+            </p>
+
+            <button onclick="shopNow()">
+                SHOP NOW
+            </button>
+        </div>
+
+    </section>
+
+
+    <!-- Footer -->
+    <footer id="contact">
+
+        <div class="footer-content">
+
+            <div>
+                <h2>EPRIS</h2>
+                <p>
+                    Fashion that defines you.
+                </p>
+            </div>
+
+            <div>
+                <h3>QUICK LINKS</h3>
+                <p>Home</p>
+                <p>Men</p>
+                <p>Women</p>
+                <p>New Arrivals</p>
+            </div>
+
+            <div>
+                <h3>CONTACT</h3>
+                <p>Email: support@epris.com</p>
+                <p>Phone: +91 7981512162</p>
+            </div>
+
+        </div>
+
+        <p class="copyright">
+            © 2026 EPRIS. All Rights Reserved.
+        </p>
+
+    </footer>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

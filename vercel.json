@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "builds": [
+    {
+      "src": "WEB-INF/api/server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "WEB-INF/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/WEB-INF/api/server.js"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/WEB-INF/assets/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/WEB-INF/$1"
+    }
+  ]
+}

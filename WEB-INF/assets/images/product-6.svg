@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 750" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb7185" />
+      <stop offset="100%" stop-color="#e11d48" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-opacity="0.15" />
+    </filter>
+  </defs>
+  <rect width="600" height="750" fill="url(#bg)" rx="8" />
+  
+  <!-- Subtle pattern / branding -->
+  <rect x="24" y="24" width="552" height="702" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1" rx="4" />
+  <text x="50" y="70" fill="rgba(255,255,255,0.4)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" letter-spacing="4">EPRIS STUDIO</text>
+  <text x="550" y="70" text-anchor="end" fill="rgba(255,255,255,0.4)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" letter-spacing="2">WOMEN</text>
+  
+  <!-- Main Illustration Artwork -->
+  <g filter="url(#shadow)" transform="translate(150, 160)">
+    
+  <path d="M120 30 L180 30 L170 90 L230 270 L70 270 L130 90 Z" fill="#ffffff" opacity="0.95" />
+  <ellipse cx="150" cy="30" rx="30" ry="12" fill="#fb7185" />
+  <path d="M120 120 C150 140 180 120 200 160" stroke="#f43f5e" stroke-width="2" fill="none" />
+
+  </g>
+  
+  <!-- Label & Badge -->
+  <g transform="translate(50, 620)">
+    <rect x="0" y="0" width="500" height="70" fill="rgba(0,0,0,0.25)" rx="6" />
+    <text x="24" y="32" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="700" letter-spacing="0.5">Women's Summer Dress</text>
+    <text x="24" y="52" fill="rgba(255,255,255,0.7)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13">Exclusive Collection</text>
+    <circle cx="460" cy="35" r="16" fill="rgba(255,255,255,0.2)" />
+    <path d="M455 35 L465 35 M461 31 L465 35 L461 39" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  </g>
+</svg>

@@ -1,0 +1,923 @@
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+
+const express = require('express');
+const path = require('path');
+const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+const products = require('./products');
+const { readDatabase, writeDatabase } = require('./store');
+const { sendOrderConfirmation, sendOrderStatusUpdate, sendWelcomeEmail } = require('./email');
+const { createRazorpayOrder, verifyRazorpaySignature, keyId: razorpayKeyId } = require('./payment');
+
+const app = express();
+const port = Number(process.env.PORT) || 3000;
+const jwtSecret = process.env.JWT_SECRET || 'development-secret-change-me';
+const corsOrigin = process.env.CORS_ORIGIN || '*';
+const googleClientId = String(process.env.GOOGLE_CLIENT_ID || '').trim();
+const facebookAppId = String(process.env.FACEBOOK_APP_ID || '').trim();
+const googleOAuthClient = new OAuth2Client(googleClientId || undefined);
+
+app.use(cors({ origin: corsOrigin }));
+app.use(express.json());
+const frontendDir = path.join(__dirname, '..');
+app.use(express.static(frontendDir));
+app.use('/assets', express.static(path.join(__dirname, '../assets')));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(frontendDir, 'index.html'));
+});
+
+function createId(prefix) {
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function publicUser(user) {
+    return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone || '',
+        role: user.role || 'customer',
+        googleLinked: !!user.googleId,
+        facebookLinked: !!user.facebookId
+    };
+}
+
+function createToken(user) {
+    return jwt.sign({ userId: user.id }, jwtSecret, { expiresIn: '7d' });
+}
+
+function authenticate(req, res, next) {
+    const authorization = req.headers.authorization || '';
+    const token = authorization.startsWith('Bearer ')
+        ? authorization.slice(7)
+        : null;
+
+    if (!token) {
+        return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    try {
+        req.userId = jwt.verify(token, jwtSecret).userId;
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+}
+
+function findProduct(productId) {
+    const database = readDatabase();
+    const catalog = (database.products && database.products.length) ? database.products : products;
+    return catalog.find(product => product.id === Number(productId));
+}
+
+function getCart(database, userId) {
+    return database.carts.find(cart => cart.userId === userId) || {
+        userId,
+        items: []
+    };
+}
+
+function saveCart(database, cart) {
+    const index = database.carts.findIndex(savedCart => savedCart.userId === cart.userId);
+    if (index === -1) {
+        database.carts.push(cart);
+    } else {
+        database.carts[index] = cart;
+    }
+}
+
+function validateAddress(address) {
+    return !!(address && address.name && address.street && address.city && address.state && address.zip);
+}
+
+function buildOrderFromCart(database, userId, address, delivery, payment) {
+    const cart = getCart(database, userId);
+    if (!cart.items.length) {
+        throw new Error('Cannot place an order with an empty cart');
+    }
+    if (!validateAddress(address)) {
+        throw new Error('A complete shipping address is required');
+    }
+
+    const subtotal = cart.items.reduce((total, item) => total + Number(item.price || 0) * Number(item.quantity || 1), 0);
+    const shipping = Number(delivery?.cost) || 0;
+    const tax = Math.round(subtotal * 0.1);
+    const order = {
+        id: createId('ord'),
+        userId,
+        items: cart.items,
+        address,
+        delivery: { type: delivery?.type || 'standard', cost: shipping },
+        payment: { type: payment?.type || 'cod' },
+        subtotal,
+        tax,
+        shipping,
+        total: subtotal + tax + shipping,
+        status: 'Pending',
+        createdAt: new Date().toISOString()
+    };
+
+    database.orders.push(order);
+    cart.items = [];
+    saveCart(database, cart);
+    return order;
+}
+
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', service: 'epris-fashion-api' });
+});
+
+// Admin seed - creates admin user if ADMIN_EMAIL and ADMIN_PASSWORD are set in env
+app.post('/api/admin/seed', async (req, res) => {
+    const adminEmail = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+    const adminPassword = String(process.env.ADMIN_PASSWORD || '').trim();
+    if (!adminEmail || !adminPassword) {
+        return res.status(503).json({ message: 'Admin seeding is not configured' });
+    }
+    const database = readDatabase();
+    let admin = database.users.find(u => u.email === adminEmail);
+    if (admin) {
+        admin.role = 'admin';
+        writeDatabase(database);
+        return res.json({ message: 'Admin role set', email: adminEmail });
+    }
+    admin = {
+        id: createId('usr'),
+        name: 'Admin',
+        email: adminEmail,
+        phone: '',
+        passwordHash: await bcrypt.hash(adminPassword, 12),
+        role: 'admin',
+        addresses: [],
+        createdAt: new Date().toISOString()
+    };
+    database.users.push(admin);
+    writeDatabase(database);
+    res.status(201).json({ message: 'Admin user created', email: adminEmail });
+});
+
+// Authentication
+app.get('/api/auth/google/config', (req, res) => {
+    res.json({ clientId: googleClientId });
+});
+
+app.post('/api/auth/google', async (req, res) => {
+    const credential = String(req.body.credential || '');
+    if (!credential) return res.status(400).json({ message: 'Google credential is required' });
+
+    let email, name, googleSub;
+
+    // Development demo support if GOOGLE_CLIENT_ID is not configured
+    if ((!googleClientId || googleClientId.startsWith('your-')) && credential.startsWith('demo_')) {
+        email = String(req.body.email || 'demo.google@gmail.com').trim().toLowerCase();
+        name = String(req.body.name || 'Google Demo User').trim();
+        googleSub = 'g_sub_' + Buffer.from(email).toString('hex').slice(0, 16);
+    } else {
+        if (!googleClientId || googleClientId.startsWith('your-')) {
+            return res.status(503).json({ message: 'Google sign-in is not configured on the server. Set GOOGLE_CLIENT_ID in api/.env.' });
+        }
+
+        let ticket;
+        try {
+            ticket = await googleOAuthClient.verifyIdToken({ idToken: credential, audience: googleClientId });
+        } catch (error) {
+            console.warn('Google sign-in token verification failed:', error.message);
+            return res.status(401).json({ message: 'Google sign-in could not be verified. Please try again.' });
+        }
+
+        const payload = ticket.getPayload();
+        if (!payload || !payload.sub || !payload.email || payload.email_verified !== true) {
+            return res.status(401).json({ message: 'Google did not provide a verified email address' });
+        }
+
+        email = payload.email.trim().toLowerCase();
+        name = String(payload.name || email.split('@')[0]).trim();
+        googleSub = payload.sub;
+    }
+
+    const database = readDatabase();
+    let user = database.users.find(candidate => candidate.googleId === googleSub);
+
+    if (!user) {
+        user = database.users.find(candidate => String(candidate.email).trim().toLowerCase() === email);
+        if (user) {
+            if (user.googleId && user.googleId !== googleSub) {
+                return res.status(409).json({ message: 'This email is linked to a different Google account' });
+            }
+            user.googleId = googleSub;
+        } else {
+            user = {
+                id: createId('usr'),
+                name,
+                email,
+                phone: '',
+                passwordHash: '',
+                googleId: googleSub,
+                role: 'customer',
+                addresses: [],
+                createdAt: new Date().toISOString()
+            };
+            database.users.push(user);
+        }
+        writeDatabase(database);
+    }
+
+    res.json({ user: publicUser(user), token: createToken(user) });
+});
+
+
+// Facebook Authentication
+app.get('/api/auth/facebook/config', (req, res) => {
+    res.json({ appId: facebookAppId, configured: !!(facebookAppId && !facebookAppId.startsWith('your-')) });
+});
+
+app.post('/api/auth/facebook', async (req, res) => {
+    const { accessToken } = req.body;
+    let email, name, fbId;
+
+    const token = req.body.accessToken || req.body.credential;
+    if ((!facebookAppId || facebookAppId.startsWith('your-')) && (token?.startsWith('demo_') || req.body.credential?.startsWith('demo_'))) {
+        email = String(req.body.email || 'demo.facebook@example.com').trim().toLowerCase();
+        name = String(req.body.name || 'Facebook User').trim();
+        fbId = 'fb_' + Buffer.from(email).toString('hex').slice(0, 16);
+    } else {
+        const activeToken = req.body.accessToken || req.body.credential;
+        if (!activeToken) {
+            return res.status(400).json({ message: 'Facebook accessToken is required' });
+        }
+
+        try {
+            const fbRes = await fetch(`https://graph.facebook.com/me?fields=id,name,email&access_token=${encodeURIComponent(accessToken)}`);
+            const fbData = await fbRes.json();
+            if (!fbRes.ok || !fbData || !fbData.id) {
+                return res.status(401).json({ message: fbData?.error?.message || 'Facebook token verification failed' });
+            }
+
+            fbId = fbData.id;
+            name = fbData.name || 'Facebook User';
+            email = fbData.email ? fbData.email.trim().toLowerCase() : `fb_${fbId}@facebook.user`;
+        } catch (err) {
+            console.error('Facebook verification error:', err.message);
+            return res.status(502).json({ message: 'Could not connect to Facebook verification service' });
+        }
+    }
+
+    const database = readDatabase();
+    let user = database.users.find(candidate => candidate.facebookId === fbId);
+
+    if (!user) {
+        user = database.users.find(candidate => String(candidate.email).trim().toLowerCase() === email);
+        if (user) {
+            if (user.facebookId && user.facebookId !== fbId) {
+                return res.status(409).json({ message: 'This email is linked to a different Facebook account' });
+            }
+            user.facebookId = fbId;
+        } else {
+            user = {
+                id: createId('usr'),
+                name,
+                email,
+                phone: '',
+                passwordHash: '',
+                facebookId: fbId,
+                role: 'customer',
+                addresses: [],
+                createdAt: new Date().toISOString()
+            };
+            database.users.push(user);
+            sendWelcomeEmail(user).catch(() => {});
+        }
+        writeDatabase(database);
+    }
+
+    res.json({ user: publicUser(user), token: createToken(user) });
+});
+
+app.post('/api/auth/register', async (req, res) => {
+    const { name, email, password, phone = '' } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    if (!name || !normalizedEmail || !password) {
+        return res.status(400).json({ message: 'Name, email, and password are required' });
+    }
+    if (password.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const database = readDatabase();
+    if (database.users.some(user => user.email === normalizedEmail)) {
+        return res.status(409).json({ message: 'An account with this email already exists' });
+    }
+
+    const user = {
+        id: createId('usr'),
+        name: String(name).trim(),
+        email: normalizedEmail,
+        phone: String(phone).trim(),
+        passwordHash: await bcrypt.hash(password, 12),
+        createdAt: new Date().toISOString()
+    };
+    database.users.push(user);
+    writeDatabase(database);
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(user).catch(() => {});
+
+    res.status(201).json({ user: publicUser(user), token: createToken(user) });
+});
+
+app.post('/api/auth/login', async (req, res) => {
+    const normalizedEmail = String(req.body.email || '').trim().toLowerCase();
+    const password = String(req.body.password || '');
+    const database = readDatabase();
+    const user = database.users.find(candidate => candidate.email === normalizedEmail);
+
+    if (!user || !user.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) {
+        return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    res.json({ user: publicUser(user), token: createToken(user) });
+});
+
+app.get('/api/auth/me', authenticate, (req, res) => {
+    const database = readDatabase();
+    const user = database.users.find(candidate => candidate.id === req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ user: publicUser(user) });
+});
+
+app.patch('/api/auth/me', authenticate, (req, res) => {
+    const { name, phone = '' } = req.body;
+    const database = readDatabase();
+    const user = database.users.find(candidate => candidate.id === req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!name || !String(name).trim()) return res.status(400).json({ message: 'Name is required' });
+
+    user.name = String(name).trim();
+    user.phone = String(phone).trim();
+    writeDatabase(database);
+    res.json({ user: publicUser(user) });
+});
+
+app.post('/api/auth/change-password', authenticate, async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const database = readDatabase();
+    const user = database.users.find(candidate => candidate.id === req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!currentPassword || !newPassword) return res.status(400).json({ message: 'Current and new passwords are required' });
+    if (newPassword.length < 6) return res.status(400).json({ message: 'New password must be at least 6 characters' });
+
+    const isValid = await bcrypt.compare(String(currentPassword), user.passwordHash);
+    if (!isValid) return res.status(401).json({ message: 'Current password is incorrect' });
+
+    user.passwordHash = await bcrypt.hash(String(newPassword), 12);
+    writeDatabase(database);
+    res.json({ message: 'Password changed successfully' });
+});
+
+// Products
+app.get('/api/products', (req, res) => {
+    const search = String(req.query.search || '').trim().toLowerCase();
+    const category = String(req.query.category || '').trim().toLowerCase();
+    const minPrice = Number(req.query.minPrice ?? 0);
+    const maxPrice = Number(req.query.maxPrice ?? Number.MAX_SAFE_INTEGER);
+
+    const database = readDatabase();
+    const catalog = (database.products && database.products.length) ? database.products : products;
+
+    const filteredProducts = catalog.filter(product => {
+        const matchesSearch = !search || `${product.name} ${product.category}`.toLowerCase().includes(search);
+        const matchesCategory = !category || product.category.toLowerCase() === category;
+        const matchesPrice = product.price >= minPrice && product.price <= maxPrice;
+        return matchesSearch && matchesCategory && matchesPrice;
+    });
+
+    res.json({ products: filteredProducts, count: filteredProducts.length });
+});
+
+app.get('/api/products/:id', (req, res) => {
+    const database = readDatabase();
+    const catalog = (database.products && database.products.length) ? database.products : products;
+    const product = catalog.find(p => p.id === Number(req.params.id));
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    res.json({ product });
+});
+
+// Product Reviews & Ratings
+app.get('/api/products/:id/reviews', (req, res) => {
+    const productId = Number(req.params.id);
+    const database = readDatabase();
+    const allReviews = database.reviews || [];
+    const productReviews = allReviews.filter(r => Number(r.productId) === productId);
+
+    const total = productReviews.length;
+    const sum = productReviews.reduce((acc, r) => acc + Number(r.rating || 0), 0);
+    const average = total > 0 ? Number((sum / total).toFixed(1)) : 5.0;
+
+    const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    productReviews.forEach(r => {
+        const rate = Math.round(Number(r.rating || 5));
+        if (breakdown[rate] !== undefined) breakdown[rate]++;
+    });
+
+    res.json({
+        productId,
+        averageRating: average,
+        totalReviews: total,
+        breakdown,
+        reviews: productReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    });
+});
+
+app.post('/api/products/:id/reviews', (req, res) => {
+    const productId = Number(req.params.id);
+    const { rating, title, comment, userName } = req.body;
+
+    if (!rating || Number(rating) < 1 || Number(rating) > 5) {
+        return res.status(400).json({ message: 'Rating must be a number between 1 and 5' });
+    }
+    if (!comment || !String(comment).trim()) {
+        return res.status(400).json({ message: 'Review comment is required' });
+    }
+
+    let reviewerName = String(userName || '').trim() || 'Verified Customer';
+    let userId = '';
+
+    const authHeader = req.headers.authorization || '';
+    if (authHeader.startsWith('Bearer ')) {
+        try {
+            const token = authHeader.slice(7);
+            const decoded = jwt.verify(token, jwtSecret);
+            const database = readDatabase();
+            const u = database.users.find(candidate => candidate.id === decoded.userId);
+            if (u) {
+                reviewerName = u.name;
+                userId = u.id;
+            }
+        } catch (e) {
+            // Optional auth
+        }
+    }
+
+    const database = readDatabase();
+    if (!database.reviews) database.reviews = [];
+
+    const newReview = {
+        id: createId('rev'),
+        productId,
+        userId,
+        userName: reviewerName,
+        rating: Number(rating),
+        title: String(title || '').trim() || 'Product Review',
+        comment: String(comment).trim(),
+        verifiedPurchase: true,
+        createdAt: new Date().toISOString()
+    };
+
+    database.reviews.push(newReview);
+    writeDatabase(database);
+
+    const productReviews = database.reviews.filter(r => Number(r.productId) === productId);
+    const total = productReviews.length;
+    const avg = Number((productReviews.reduce((sum, r) => sum + r.rating, 0) / total).toFixed(1));
+
+    res.status(201).json({
+        review: newReview,
+        averageRating: avg,
+        totalReviews: total
+    });
+});
+
+// Cart
+app.get('/api/cart', authenticate, (req, res) => {
+    const database = readDatabase();
+    res.json({ cart: getCart(database, req.userId) });
+});
+
+app.post('/api/cart/items', authenticate, (req, res) => {
+    const { productId, quantity = 1, color = 'Black', size = 'M' } = req.body;
+    const product = findProduct(productId);
+    const requestedQuantity = Number(quantity);
+
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    if (!Number.isInteger(requestedQuantity) || requestedQuantity < 1) {
+        return res.status(400).json({ message: 'Quantity must be a positive whole number' });
+    }
+
+    const database = readDatabase();
+    const cart = getCart(database, req.userId);
+    const existingItem = cart.items.find(item => item.productId === product.id && item.color === color && item.size === size);
+
+    if (existingItem) {
+        existingItem.quantity += requestedQuantity;
+    } else {
+        cart.items.push({
+            productId: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.image,
+            color,
+            size,
+            quantity: requestedQuantity
+        });
+    }
+
+    saveCart(database, cart);
+    writeDatabase(database);
+    res.status(201).json({ cart });
+});
+
+app.patch('/api/cart/items/:productId', authenticate, (req, res) => {
+    const quantity = Number(req.body.quantity);
+    if (!Number.isInteger(quantity) || quantity < 0) {
+        return res.status(400).json({ message: 'Quantity must be zero or a positive whole number' });
+    }
+
+    const database = readDatabase();
+    const cart = getCart(database, req.userId);
+    const item = cart.items.find(cartItem => cartItem.productId === Number(req.params.productId));
+    if (!item) return res.status(404).json({ message: 'Cart item not found' });
+
+    if (quantity === 0) {
+        cart.items = cart.items.filter(cartItem => cartItem !== item);
+    } else {
+        item.quantity = quantity;
+    }
+
+    saveCart(database, cart);
+    writeDatabase(database);
+    res.json({ cart });
+});
+
+app.delete('/api/cart/items/:productId', authenticate, (req, res) => {
+    const database = readDatabase();
+    const cart = getCart(database, req.userId);
+    const originalLength = cart.items.length;
+    cart.items = cart.items.filter(item => item.productId !== Number(req.params.productId));
+
+    if (cart.items.length === originalLength) {
+        return res.status(404).json({ message: 'Cart item not found' });
+    }
+
+    saveCart(database, cart);
+    writeDatabase(database);
+    res.json({ cart });
+});
+
+// Wishlist
+app.get('/api/wishlist', authenticate, (req, res) => {
+    const database = readDatabase();
+    const wishlist = database.wishlists.find(item => item.userId === req.userId) || { userId: req.userId, productIds: [] };
+    res.json({ products: wishlist.productIds.map(findProduct).filter(Boolean) });
+});
+
+app.post('/api/wishlist/:productId', authenticate, (req, res) => {
+    const product = findProduct(req.params.productId);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    const database = readDatabase();
+    let wishlist = database.wishlists.find(item => item.userId === req.userId);
+    if (!wishlist) {
+        wishlist = { userId: req.userId, productIds: [] };
+        database.wishlists.push(wishlist);
+    }
+    if (!wishlist.productIds.includes(product.id)) wishlist.productIds.push(product.id);
+    writeDatabase(database);
+    res.status(201).json({ product });
+});
+
+app.delete('/api/wishlist/:productId', authenticate, (req, res) => {
+    const database = readDatabase();
+    const wishlist = database.wishlists.find(item => item.userId === req.userId);
+    if (!wishlist) return res.status(404).json({ message: 'Wishlist item not found' });
+
+    const productId = Number(req.params.productId);
+    const originalLength = wishlist.productIds.length;
+    wishlist.productIds = wishlist.productIds.filter(id => id !== productId);
+    if (wishlist.productIds.length === originalLength) {
+        return res.status(404).json({ message: 'Wishlist item not found' });
+    }
+
+    writeDatabase(database);
+    res.json({ message: 'Product removed from wishlist' });
+});
+
+// Addresses
+app.get('/api/addresses', authenticate, (req, res) => {
+    const database = readDatabase();
+    const user = database.users.find(candidate => candidate.id === req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ addresses: user.addresses || [] });
+});
+
+app.post('/api/addresses', authenticate, (req, res) => {
+    const { type = 'home', name, phone = '', street, city, state, zip, isDefault = false } = req.body;
+    const database = readDatabase();
+    const user = database.users.find(candidate => candidate.id === req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!name || !street || !city || !state || !zip) {
+        return res.status(400).json({ message: 'Name, street, city, state, and ZIP are required' });
+    }
+
+    if (isDefault) {
+        user.addresses = (user.addresses || []).map(address => ({ ...address, isDefault: false }));
+    }
+
+    const address = {
+        id: createId('adr'),
+        type,
+        name: String(name).trim(),
+        phone: String(phone).trim(),
+        street: String(street).trim(),
+        city: String(city).trim(),
+        state: String(state).trim(),
+        zip: String(zip).trim(),
+        isDefault: Boolean(isDefault)
+    };
+
+    user.addresses = user.addresses || [];
+    user.addresses.push(address);
+    writeDatabase(database);
+    res.status(201).json({ addresses: user.addresses });
+});
+
+app.delete('/api/addresses/:addressId', authenticate, (req, res) => {
+    const database = readDatabase();
+    const user = database.users.find(candidate => candidate.id === req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const previousLength = (user.addresses || []).length;
+    user.addresses = (user.addresses || []).filter(address => String(address.id) !== String(req.params.addressId));
+    if (user.addresses.length === previousLength) {
+        return res.status(404).json({ message: 'Address not found' });
+    }
+
+    writeDatabase(database);
+    res.json({ addresses: user.addresses });
+});
+
+// Orders
+app.post('/api/orders', authenticate, (req, res) => {
+    const { address, delivery = { type: 'standard', cost: 100 }, payment = { type: 'cod' } } = req.body;
+    const database = readDatabase();
+    const cart = getCart(database, req.userId);
+
+    if (!cart.items.length) return res.status(400).json({ message: 'Cannot place an order with an empty cart' });
+    if (!address || !address.name || !address.street || !address.city || !address.state || !address.zip) {
+        return res.status(400).json({ message: 'A complete shipping address is required' });
+    }
+
+    const subtotal = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
+    const shipping = Number(delivery.cost) || 0;
+    const tax = Math.round(subtotal * 0.1);
+    const order = {
+        id: createId('ord'),
+        userId: req.userId,
+        items: cart.items,
+        address,
+        delivery: { type: delivery.type, cost: shipping },
+        payment: { type: payment.type },
+        subtotal,
+        tax,
+        shipping,
+        total: subtotal + tax + shipping,
+        status: 'Pending',
+        createdAt: new Date().toISOString()
+    };
+
+    database.orders.push(order);
+    cart.items = [];
+    saveCart(database, cart);
+    writeDatabase(database);
+
+    // Send order confirmation email (non-blocking)
+    const buyer = database.users.find(u => u.id === req.userId);
+    if (buyer) sendOrderConfirmation(buyer, order).catch(() => {});
+
+    res.status(201).json({ order });
+});
+
+app.get('/api/orders', authenticate, (req, res) => {
+    const database = readDatabase();
+    const orders = database.orders.filter(order => order.userId === req.userId);
+    res.json({ orders });
+});
+
+app.get('/api/orders/:id', authenticate, (req, res) => {
+    const database = readDatabase();
+    const order = database.orders.find(candidate => candidate.id === req.params.id && candidate.userId === req.userId);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    res.json({ order });
+});
+
+// Admin middleware
+function requireAdmin(req, res, next) {
+    const database = readDatabase();
+    const user = database.users.find(u => u.id === req.userId);
+    if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: 'Administrator access required' });
+    }
+    next();
+}
+
+function getProducts(database) {
+    if (!database.products || !database.products.length) {
+        database.products = products.map(p => ({ ...p }));
+        writeDatabase(database);
+    }
+    return database.products;
+}
+
+// Admin: Products
+app.get('/api/admin/products', authenticate, requireAdmin, (req, res) => {
+    const database = readDatabase();
+    res.json({ products: getProducts(database) });
+});
+
+app.post('/api/admin/products', authenticate, requireAdmin, (req, res) => {
+    const { name, category, price, originalPrice, inventory, image, description } = req.body;
+    if (!name || !category || price == null) {
+        return res.status(400).json({ message: 'Name, category, and price are required' });
+    }
+    const database = readDatabase();
+    const allProducts = getProducts(database);
+    const newProduct = {
+        id: Math.max(0, ...allProducts.map(p => p.id)) + 1,
+        name: String(name).trim(),
+        category: String(category).trim(),
+        price: Number(price),
+        originalPrice: Number(originalPrice || price),
+        inventory: Number(inventory || 0),
+        image: String(image || '').trim(),
+        description: String(description || '').trim(),
+        freeTrial: false
+    };
+    allProducts.push(newProduct);
+    database.products = allProducts;
+    writeDatabase(database);
+    res.status(201).json({ product: newProduct });
+});
+
+app.patch('/api/admin/products/:id', authenticate, requireAdmin, (req, res) => {
+    const database = readDatabase();
+    const allProducts = getProducts(database);
+    const index = allProducts.findIndex(p => p.id === Number(req.params.id));
+    if (index === -1) return res.status(404).json({ message: 'Product not found' });
+    const { name, category, price, originalPrice, inventory, image, description } = req.body;
+    if (name != null) allProducts[index].name = String(name).trim();
+    if (category != null) allProducts[index].category = String(category).trim();
+    if (price != null) allProducts[index].price = Number(price);
+    if (originalPrice != null) allProducts[index].originalPrice = Number(originalPrice);
+    if (inventory != null) allProducts[index].inventory = Number(inventory);
+    if (image != null) allProducts[index].image = String(image).trim();
+    if (description != null) allProducts[index].description = String(description).trim();
+    database.products = allProducts;
+    writeDatabase(database);
+    res.json({ product: allProducts[index] });
+});
+
+app.delete('/api/admin/products/:id', authenticate, requireAdmin, (req, res) => {
+    const database = readDatabase();
+    const allProducts = getProducts(database);
+    const index = allProducts.findIndex(p => p.id === Number(req.params.id));
+    if (index === -1) return res.status(404).json({ message: 'Product not found' });
+    allProducts.splice(index, 1);
+    database.products = allProducts;
+    writeDatabase(database);
+    res.json({ message: 'Product deleted' });
+});
+
+// Admin: Orders
+app.get('/api/admin/orders', authenticate, requireAdmin, (req, res) => {
+    const database = readDatabase();
+    const orders = database.orders.map(order => {
+        const customer = database.users.find(u => u.id === order.userId);
+        return {
+            ...order,
+            customer: customer ? { name: customer.name, email: customer.email } : null,
+            payment: { ...order.payment, status: order.payment?.status || (order.status === 'Delivered' ? 'paid' : 'pending') }
+        };
+    }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json({ orders });
+});
+
+app.patch('/api/admin/orders/:id/status', authenticate, requireAdmin, (req, res) => {
+    const { status } = req.body;
+    const validStatuses = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded', 'Payment Failed'];
+    if (!status || !validStatuses.includes(status)) {
+        return res.status(400).json({ message: `Status must be one of: ${validStatuses.join(', ')}` });
+    }
+    const database = readDatabase();
+    const order = database.orders.find(o => o.id === req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    order.status = status;
+    writeDatabase(database);
+
+    // Send status update email (non-blocking)
+    const customer = database.users.find(u => u.id === order.userId);
+    if (customer) sendOrderStatusUpdate(customer, order).catch(() => {});
+
+    res.json({ order });
+});
+
+// Admin: Customers
+app.get('/api/admin/customers', authenticate, requireAdmin, (req, res) => {
+    const database = readDatabase();
+    const customers = database.users.map(user => {
+        const userOrders = database.orders.filter(o => o.userId === user.id);
+        return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone || '',
+            role: user.role || 'customer',
+            createdAt: user.createdAt,
+            orderCount: userOrders.length,
+            totalSpent: userOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+        };
+    });
+    res.json({ customers });
+});
+
+
+// ---------------------------------------------------------------------------
+// Razorpay Payment Routes
+// ---------------------------------------------------------------------------
+
+// GET /api/payment/config  returns Razorpay key for frontend
+app.get('/api/payment/config', (req, res) => {
+    res.json({ keyId: razorpayKeyId || '', configured: !!(razorpayKeyId && !razorpayKeyId.includes('your_')) });
+});
+
+// POST /api/payment/create-order  creates a Razorpay order for the given amount
+app.post('/api/payment/create-order', authenticate, async (req, res) => {
+    const { amount, currency = 'INR' } = req.body;
+    if (!amount || isNaN(Number(amount))) {
+        return res.status(400).json({ message: 'amount (in rupees) is required' });
+    }
+    try {
+        const rzOrder = await createRazorpayOrder(Number(amount), currency, `epris_${Date.now()}`);
+        res.json({ order: rzOrder, simulated: !!rzOrder.simulated });
+    } catch (err) {
+        console.error('[Razorpay] create-order error:', err.message);
+        res.status(502).json({ message: 'Payment gateway error. Please try again.' });
+    }
+});
+
+// POST /api/payment/verify  verifies Razorpay signature after successful payment
+app.post('/api/payment/verify', authenticate, async (req, res) => {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        return res.status(400).json({ message: 'razorpay_order_id, razorpay_payment_id, and razorpay_signature are required' });
+    }
+
+    const isValid = verifyRazorpaySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+    if (!isValid) {
+        return res.status(400).json({ message: 'Payment verification failed  invalid signature' });
+    }
+
+    // If an epris orderId is provided, mark it as Confirmed + record payment info
+    if (orderId) {
+        const database = readDatabase();
+        const order = database.orders.find(o => o.id === orderId && o.userId === req.userId);
+        if (order) {
+            order.status = 'Confirmed';
+            order.payment = {
+                ...order.payment,
+                type: 'card',
+                status: 'paid',
+                razorpayOrderId: razorpay_order_id,
+                razorpayPaymentId: razorpay_payment_id,
+                paidAt: new Date().toISOString()
+            };
+            writeDatabase(database);
+
+            // Send confirmation email
+            const user = database.users.find(u => u.id === req.userId);
+            if (user) sendOrderConfirmation(user, order).catch(() => {});
+        }
+    }
+
+    res.json({ verified: true, paymentId: razorpay_payment_id });
+});
+app.use((error, req, res, next) => {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+});
+
+if (require.main === module) {
+    app.listen(port, () => {
+        console.log('\n======================================================');
+        console.log(`🚀 EPRIS Fashion Store is running at http://localhost:${port}`);
+        console.log(`   - Storefront: http://localhost:${port}/`);
+        console.log(`   - Login:      http://localhost:${port}/login.html`);
+        console.log(`   - Sign Up:    http://localhost:${port}/signup.html`);
+        console.log(`   - API Base:   http://localhost:${port}/api`);
+        console.log('======================================================\n');
+    });
+}
+
+module.exports = { app };
