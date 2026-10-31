@@ -4,7 +4,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
-const { User, Product, Cart, Wishlist, Order, Review } = require('./models');
+const { User, Product, Cart, Wishlist, Order, Review, Coupon } = require('./models');
 const productsSeed = require('./products');
 
 const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/epris_fashion';
@@ -149,6 +149,30 @@ async function migrate() {
         }
     }
 
+    
+    // 7. Migrate Coupons
+    console.log('🎟️ Migrating Coupons...');
+    if (Array.isArray(db.coupons)) {
+        for (const c of db.coupons) {
+            if (c.code) {
+                await Coupon.findOneAndUpdate(
+                    { code: c.code.toUpperCase() },
+                    {
+                        code: c.code.toUpperCase(),
+                        discountType: c.discountType,
+                        discountValue: c.discountValue,
+                        minOrderAmount: c.minOrderAmount || 0,
+                        maxDiscountAmount: c.maxDiscountAmount || null,
+                        isActive: c.isActive !== false,
+                        description: c.description || ''
+                    },
+                    { upsert: true, new: true }
+                );
+                summary.coupons = (summary.coupons || 0) + 1;
+            }
+        }
+    }
+
     console.log('\n========================================');
     console.log('🎉 MIGRATION COMPLETED SUCCESSFULLY!');
     console.log(`- Products:  ${summary.products}`);
@@ -157,6 +181,7 @@ async function migrate() {
     console.log(`- Wishlists: ${summary.wishlists}`);
     console.log(`- Orders:    ${summary.orders}`);
     console.log(`- Reviews:   ${summary.reviews}`);
+    console.log(`- Coupons:   ${summary.coupons || 0}`);
     console.log('========================================\n');
 
     await mongoose.disconnect();

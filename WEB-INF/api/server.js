@@ -1,5 +1,21 @@
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
+// Automatically delegate to MongoDB Atlas if MONGODB_URI is configured
+const configuredMongoUri = String(process.env.MONGODB_URI || process.env.MONGO_URI || '').trim();
+if (configuredMongoUri.startsWith('mongodb')) {
+    console.log('🍃 MONGODB_URI detected: Booting EPRIS store with MongoDB Atlas backend...');
+    const mongoBackend = require('./server-mongo');
+    if (require.main === module) {
+        mongoBackend.start().catch(err => {
+            console.error('❌ Failed to connect to MongoDB Atlas:', err.message);
+            console.error('   Please verify connection string, credentials, and Network Access (0.0.0.0/0).');
+            process.exit(1);
+        });
+    }
+    module.exports = mongoBackend;
+    return;
+}
+
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
