@@ -132,6 +132,9 @@
                 <!-- Add to Cart & Wishlist -->
                 <div class="product-actions">
                     <button class="add-to-cart-btn" onclick="addProductToCart()">🛒 Add to Cart</button>
+                    <button class="buy-now-upi-btn" onclick="buyNowWithUpi()" style="flex: 1; min-width: 170px; padding: 14px; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);">
+                        ⚡ Buy Now with UPI QR
+                    </button>
                     <button class="virtual-trial-action-btn" type="button" onclick="openVirtualTrial()" title="Try on virtually for free">
                         <span class="trial-icon">🪞</span> Free Virtual Trial
                     </button>
@@ -622,6 +625,23 @@
         }
 
         // Add to cart
+        function buyNowWithUpi() {
+            const product = {
+                id: getProductIdFromURL(),
+                name: document.getElementById('productName').textContent,
+                price: Number(document.getElementById('currentPrice').textContent.replace(/[₹,]/g, '')),
+                color: selectedColor,
+                size: selectedSize,
+                quantity: parseInt(document.getElementById('quantity').value, 10),
+                image: document.getElementById('mainImage').src
+            };
+
+            // Set cart to only this single selected item for instant dynamic QR checkout
+            localStorage.setItem('cart', JSON.stringify([product]));
+            if (typeof updateCartCount === 'function') updateCartCount();
+            window.location.href = 'checkout.html';
+        }
+
         function addProductToCart() {
             const product = {
                 id: getProductIdFromURL(),
@@ -1080,5 +1100,6 @@
                 alert('Could not submit review: ' + err.message);
             }
         });
+    </script>
 </body>
 </html>

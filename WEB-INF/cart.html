@@ -108,7 +108,10 @@
                         <div class="cart-item-total">
                             <p>₹${itemTotal}</p>
                         </div>
-                        <button class="delete-btn" onclick="removeFromCart(${index})">Remove</button>
+                        <div style="display:flex; flex-direction:column; gap:6px;">
+                            <button type="button" style="background:#f0fdf4; color:#16a34a; border:1px solid #86efac; border-radius:6px; padding:6px 10px; font-size:12px; font-weight:700; cursor:pointer;" onclick="checkoutSingleItem(${index})">⚡ Pay this with QR</button>
+                            <button class="delete-btn" onclick="removeFromCart(${index})">Remove</button>
+                        </div>
                     </div>
                 `;
             });
@@ -159,6 +162,14 @@
             localStorage.setItem('cart', JSON.stringify(cart));
             alert('Item removed from cart');
             loadCart();
+        }
+
+        function checkoutSingleItem(index) {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (!cart[index]) return;
+            // Set single item to checkout with dynamic QR code
+            localStorage.setItem('cart', JSON.stringify([cart[index]]));
+            window.location.href = 'checkout.html';
         }
 
         function proceedToCheckout() {

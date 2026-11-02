@@ -233,11 +233,11 @@
                             </div>
                         </div>
 
-                        <!-- UPI Payment Box (Displaying Rakesh's Google Pay QR Code) -->
-                        <div id="upiPaymentForm" class="payment-form" style="display: block; padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; margin-top: 20px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                                <span style="background: #eef2ff; color: #4f46e5; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">⚡ Scan & Pay with Google Pay / PhonePe</span>
-                                <span style="font-size: 12px; color: #16a34a; font-weight: 600;">✓ Instant Direct Transfer</span>
+                        <!-- UPI Payment Box (Dynamic Amount Generated QR Code for Rakesh) -->
+                        <div id="upiPaymentForm" class="payment-form" style="display: block; padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; margin-top: 20px; text-align: center; box-shadow: 0 6px 24px rgba(0,0,0,0.06);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                                <span style="background: #eef2ff; color: #4f46e5; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">⚡ Dynamic UPI QR Code</span>
+                                <span style="font-size: 12px; color: #16a34a; font-weight: 600;">✓ Exact Amount Auto-Filled</span>
                             </div>
 
                             <div style="display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; flex-wrap: wrap;">
@@ -248,34 +248,79 @@
                                 <span class="upi-app-pill cred">CRED</span>
                             </div>
 
-                            <!-- Display Rakesh's Real Google Pay QR Image -->
-                            <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 16px; max-width: 320px; margin: 0 auto 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
-                                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;">
-                                    <div style="width: 28px; height: 28px; border-radius: 50%; background: #16a34a; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">R</div>
-                                    <strong style="font-size: 16px; color: #0f172a;">Rakesh</strong>
+                            <!-- Item Selector for QR Amount -->
+                            <div id="upiItemSelectionWrapper" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; text-align: left; max-width: 360px; margin-left: auto; margin-right: auto;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <label for="checkoutItemSelector" style="font-size: 12px; font-weight: 700; color: #0f172a; margin: 0;">
+                                        🎯 Generate QR Amount For:
+                                    </label>
+                                    <span id="selectedItemBadge" style="font-size: 10px; font-weight: 700; color: #16a34a; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 9999px;">Dynamic Amount</span>
                                 </div>
-                                <img src="assets/images/rakesh-upi-qr.jpg" alt="Rakesh Google Pay UPI QR Code" style="width: 240px; height: auto; max-width: 100%; border-radius: 12px; display: block; margin: 0 auto; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                                <select id="checkoutItemSelector" onchange="onPaymentItemChange(this.value)" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 2px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; background: #ffffff; cursor: pointer; box-sizing: border-box;">
+                                    <!-- Populated dynamically -->
+                                </select>
+                                <div id="selectedItemDetails"></div>
+                            </div>
+
+                            <!-- Styled Dynamic Google Pay Card -->
+                            <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 20px; padding: 20px; max-width: 330px; margin: 0 auto 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+                                <!-- Payee Header -->
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #16a34a; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px;">R</div>
+                                    <strong style="font-size: 18px; color: #0f172a;">Rakesh</strong>
+                                </div>
+
+                                <!-- Dynamic Amount Highlight -->
+                                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; margin-bottom: 14px;">
+                                    <span style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Amount to Pay (Auto-Filled)</span>
+                                    <div id="dynamicUpiAmountDisplay" style="font-size: 28px; font-weight: 800; color: #0f172a; margin: 3px 0;">₹0</div>
+                                    <div id="dynamicUpiItemSummary" style="font-size: 11px; color: #16a34a; font-weight: 600;">Pre-filled in your UPI app upon scan</div>
+                                </div>
+
+                                <!-- Dynamic Vector QR Code Container -->
+                                <div style="position: relative; width: 226px; height: 226px; margin: 0 auto; background: #ffffff; padding: 6px; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; box-sizing: border-box;">
+                                    <div id="dynamicUpiQrWrapper" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                                        <!-- Dynamic QR SVG will be rendered here -->
+                                    </div>
+                                    <!-- Center Google Pay / UPI Icon Overlay -->
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 38px; height: 38px; background: #ffffff; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.18); display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 2;">
+                                        <svg width="22" height="22" viewBox="0 0 48 48">
+                                            <path fill="#4285F4" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.2 6.1 29.4 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.7-.4-3.9z"/>
+                                            <path fill="#34A853" d="M6.3 14.7l6.6 4.8C14.7 16.1 19 13.6 24 13.6c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.2 7.7 29.4 5.6 24 5.6c-7.3 0-13.6 4.2-17.7 9.1z"/>
+                                            <path fill="#FBBC05" d="M24 44c5.3 0 10.1-2.1 13.7-5.5l-6.3-5.2c-2.1 1.4-4.6 2.3-7.4 2.3-5.3 0-9.7-3.3-11.3-8l-6.6 5.1C10.2 39.6 16.6 44 24 44z"/>
+                                            <path fill="#EA4335" d="M43.6 20.1H42V20H24v8h11.3c-.9 2.5-2.5 4.6-4.6 6l6.3 5.2C40.6 35.8 44 30.3 44 24c0-1.3-.1-2.7-.4-3.9z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <!-- UPI ID Footer -->
+                                <div style="margin-top: 12px; font-size: 13px; color: #334155; font-weight: 600;">
+                                    UPI ID: <span id="inlineUpiIdDisplay" style="font-family: monospace; color: #0f172a;">rakeshreddy056012-1@okaxis</span>
+                                </div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                                    Scan to pay with any UPI app
+                                </div>
                             </div>
 
                             <!-- UPI ID & Copy -->
                             <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; max-width: 360px; margin: 0 auto 14px; font-size: 13px;">
                                 <span style="color: #64748b; font-weight: 600;">UPI ID:</span>
-                                <strong id="inlineUpiIdDisplay" style="font-family: monospace; color: #0f172a; font-size: 13px;">rakeshreddy056012-1@okaxis</strong>
+                                <strong style="font-family: monospace; color: #0f172a; font-size: 13px;">rakeshreddy056012-1@okaxis</strong>
                                 <button type="button" id="inlineUpiCopyBtn" onclick="copyUpiIdText('rakeshreddy056012-1@okaxis')" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">📋 Copy</button>
                             </div>
 
                             <!-- Mobile Deep Link Button -->
-                            <a id="inlineUpiIntentBtn" href="upi://pay?pa=rakeshreddy056012-1@okaxis&pn=Rakesh&cu=INR&tn=EPRIS%20Order" class="epris-upi-intent-btn" style="max-width: 360px; margin: 0 auto 14px; display: inline-block;">
+                            <a id="inlineUpiIntentBtn" href="#" class="epris-upi-intent-btn" style="max-width: 360px; margin: 0 auto 14px; display: block; text-decoration: none;">
                                 📱 Tap to Pay in Google Pay / PhonePe
                             </a>
 
                             <!-- 12-digit UTR Input -->
-                            <div style="max-width: 360px; margin: 0 auto 10px; text-align: left;">
-                                <label for="inlineUpiUtrInput" style="display: block; font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">
-                                    Enter 12-Digit UPI Ref / UTR No. * :
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; max-width: 360px; margin: 0 auto 10px; text-align: left; box-sizing: border-box;">
+                                <label for="inlineUpiUtrInput" style="display: block; font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
+                                    Step 2: Enter 12-Digit UPI Ref / UTR No. *
                                 </label>
                                 <input type="text" id="inlineUpiUtrInput" placeholder="e.g. 412893745612" maxlength="16" style="width: 100%; padding: 10px 12px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-weight: 600;">
-                                <small style="display: block; color: #64748b; font-size: 11px; margin-top: 4px;">
+                                <small style="display: block; color: #64748b; font-size: 11px; margin-top: 6px; line-height: 1.4;">
                                     ℹ️ Find the 12-digit UPI Transaction ID / UTR in Google Pay or PhonePe after paying. Order is verified against your bank transfer.
                                 </small>
                             </div>
@@ -380,13 +425,16 @@
         let selectedDelivery = { type: 'standard', cost: 100 };
         let selectedPayment = 'upi';
         let selectedAddress = null;
+        let selectedItemIndex = -1; // -1 = All items; >= 0 = specific item index
+        let appliedCoupon = null;
 
         // Initialize checkout
         window.addEventListener('load', async function() {
             const user = await requireAuthentication();
             if (!user) return;
-            loadCheckout();
+            await loadCheckout();
             loadSavedAddresses();
+            populateItemSelector();
             updateOrderSummary();
             if (selectedPayment === 'upi') {
                 renderInlineUpiQR();
@@ -432,17 +480,19 @@
         function displayCartItems() {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
             const sidebarItems = document.getElementById('sidebarItems');
+            if (!sidebarItems) return;
             
             let itemsHTML = '';
-            cart.forEach(item => {
+            cart.forEach((item, idx) => {
                 const quantity = item.quantity || 1;
                 const itemTotal = (parseInt(item.price) || 0) * quantity;
+                const isSelected = selectedItemIndex === idx || selectedItemIndex === -1;
                 itemsHTML += `
-                    <div class="sidebar-item">
+                    <div class="sidebar-item" style="position:relative;${!isSelected ? 'opacity:0.4;' : ''}">
                         <img src="${item.image || 'assets/images/placeholder.svg'}" alt="${item.name}">
                         <div>
                             <p class="item-name">${item.name}</p>
-                            <p class="item-qty">Qty: ${quantity}</p>
+                            <p class="item-qty">Qty: ${quantity}${item.size ? ' • Size: ' + item.size : ''}</p>
                         </div>
                         <p class="item-total">₹${itemTotal}</p>
                     </div>
@@ -452,10 +502,198 @@
             sidebarItems.innerHTML = itemsHTML;
         }
 
+        function populateItemSelector() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const selector = document.getElementById('checkoutItemSelector');
+            const selectorWrapper = document.getElementById('upiItemSelectionWrapper');
+            if (!selector) return;
+
+            if (cart.length === 0) {
+                selector.innerHTML = '<option value="-1">No items in cart</option>';
+                selectedItemIndex = -1;
+                return;
+            }
+
+            if (cart.length === 1) {
+                const item = cart[0];
+                const itemTotal = (parseInt(item.price) || 0) * (item.quantity || 1);
+                selector.innerHTML = `<option value="0">${item.name} (${item.quantity || 1}x) - ₹${itemTotal}</option>`;
+                selectedItemIndex = 0;
+                if (selectorWrapper) selectorWrapper.style.display = 'block';
+                updateSelectedItemDetails();
+                return;
+            }
+
+            // Multiple items in cart: Allow choosing all or any single item
+            let totalCartVal = 0;
+            let optionsHTML = '';
+            cart.forEach((item, idx) => {
+                const itemTotal = (parseInt(item.price) || 0) * (item.quantity || 1);
+                totalCartVal += itemTotal;
+                optionsHTML += `<option value="${idx}">Item ${idx + 1}: ${item.name} (${item.quantity || 1}x) - ₹${itemTotal}</option>`;
+            });
+
+            selector.innerHTML = `<option value="-1">📦 Pay for All Items in Cart (Total: ₹${totalCartVal})</option>` + optionsHTML;
+            if (selectedItemIndex >= 0 && selectedItemIndex < cart.length) {
+                selector.value = String(selectedItemIndex);
+            } else {
+                selector.value = "-1";
+                selectedItemIndex = -1;
+            }
+
+            updateSelectedItemDetails();
+        }
+
+        function onPaymentItemChange(val) {
+            selectedItemIndex = parseInt(val, 10);
+            updateSelectedItemDetails();
+            displayCartItems();
+            updateOrderSummary();
+            renderInlineUpiQR();
+        }
+
+        function updateSelectedItemDetails() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const detailsEl = document.getElementById('selectedItemDetails');
+            const badgeEl = document.getElementById('selectedItemBadge');
+            if (!detailsEl) return;
+
+            if (selectedItemIndex >= 0 && cart[selectedItemIndex]) {
+                const item = cart[selectedItemIndex];
+                const itemTotal = (parseInt(item.price) || 0) * (item.quantity || 1);
+                if (badgeEl) {
+                    badgeEl.textContent = 'Single Item QR';
+                    badgeEl.style.background = '#f0fdf4';
+                    badgeEl.style.color = '#16a34a';
+                }
+                detailsEl.innerHTML = `
+                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:8px 10px; margin-top:6px;">
+                        <span style="color:#16a34a; font-weight:700;">🎯 Selected:</span> 
+                        <strong>${item.name}</strong> (${item.quantity || 1}x) • <strong style="color:#15803d;">₹${itemTotal}</strong>
+                        ${cart.length > 1 ? `<span style="display:block; font-size:11px; color:#64748b; margin-top:2px;">(Remaining ${cart.length - 1} item(s) will stay safely saved in your cart)</span>` : ''}
+                    </div>
+                `;
+            } else {
+                if (badgeEl) {
+                    badgeEl.textContent = 'All Items QR';
+                    badgeEl.style.background = '#eef2ff';
+                    badgeEl.style.color = '#4338ca';
+                }
+                detailsEl.innerHTML = `
+                    <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:8px; padding:8px 10px; margin-top:6px;">
+                        <span style="color:#4338ca; font-weight:700;">📦 All Items Selected:</span>
+                        <span style="display:block; font-size:11px; color:#64748b; margin-top:2px;">All ${cart.length} items in your cart are combined in this QR code.</span>
+                    </div>
+                `;
+            }
+        }
+
+        function calculatePaymentTotals() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            let itemsToPay = [];
+
+            if (selectedItemIndex >= 0 && cart[selectedItemIndex]) {
+                itemsToPay = [cart[selectedItemIndex]];
+            } else {
+                itemsToPay = cart;
+            }
+
+            let subtotal = 0;
+            let totalQty = 0;
+            itemsToPay.forEach(item => {
+                const qty = item.quantity || 1;
+                subtotal += (parseInt(item.price) || 0) * qty;
+                totalQty += qty;
+            });
+
+            const deliveryCost = (selectedDelivery && typeof selectedDelivery.cost === 'number') ? selectedDelivery.cost : 100;
+            let discount = 0;
+
+            if (appliedCoupon) {
+                if (appliedCoupon.discountType === 'percentage') {
+                    discount = Math.round((subtotal * appliedCoupon.discountValue) / 100);
+                    if (appliedCoupon.maxDiscountAmount) {
+                        discount = Math.min(discount, appliedCoupon.maxDiscountAmount);
+                    }
+                } else if (appliedCoupon.discountType === 'flat') {
+                    discount = Math.min(appliedCoupon.discountValue, subtotal);
+                } else if (appliedCoupon.discountType === 'shipping') {
+                    discount = Math.min(appliedCoupon.discountValue, deliveryCost);
+                }
+            }
+
+            const tax = Math.floor(Math.max(0, subtotal - discount) * 0.1);
+            const total = Math.max(0, subtotal - discount + tax + deliveryCost);
+
+            let itemDescription = '';
+            if (itemsToPay.length === 1) {
+                itemDescription = `${itemsToPay[0].name} (${itemsToPay[0].quantity || 1}x)`;
+            } else if (itemsToPay.length > 1) {
+                itemDescription = `${totalQty} items (${itemsToPay[0].name} + ${itemsToPay.length - 1} more)`;
+            } else {
+                itemDescription = '0 items';
+            }
+
+            return {
+                subtotal,
+                delivery: deliveryCost,
+                discount,
+                tax,
+                total,
+                itemsToPay,
+                itemDescription
+            };
+        }
+
+        function renderInlineUpiQR() {
+            const qrWrapper = document.getElementById('dynamicUpiQrWrapper');
+            const amountDisplay = document.getElementById('dynamicUpiAmountDisplay');
+            const itemSummary = document.getElementById('dynamicUpiItemSummary');
+            const intentBtn = document.getElementById('inlineUpiIntentBtn');
+            if (!qrWrapper) return;
+
+            const totals = calculatePaymentTotals();
+            const formattedAmount = (Math.max(1, totals.total)).toFixed(2);
+
+            if (amountDisplay) {
+                amountDisplay.textContent = '₹' + totals.total.toLocaleString('en-IN');
+            }
+
+            if (itemSummary) {
+                itemSummary.textContent = `${totals.itemDescription} • Auto-filled in Google Pay / PhonePe`;
+            }
+
+            // Build dynamic UPI Deep Link URI with the exact amount
+            const upiId = 'rakeshreddy056012-1@okaxis';
+            const upiName = 'Rakesh';
+            const note = 'EPRIS Order';
+            const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(note)}`;
+
+            // Update mobile deep link button
+            if (intentBtn) {
+                intentBtn.href = upiUri;
+                intentBtn.innerHTML = `📱 Tap to Pay ₹${totals.total.toLocaleString('en-IN')} in Google Pay / PhonePe`;
+            }
+
+            // Generate Dynamic QR Code
+            try {
+                if (window.EprisInvoice && typeof window.EprisInvoice.generateQRSVG === 'function') {
+                    const svgHtml = window.EprisInvoice.generateQRSVG(upiUri, 214);
+                    qrWrapper.innerHTML = svgHtml;
+                } else {
+                    qrWrapper.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=214x214&margin=2&data=${encodeURIComponent(upiUri)}" alt="UPI QR Code for ₹${formattedAmount}" style="width:214px;height:214px;border-radius:8px;display:block;">`;
+                }
+            } catch (err) {
+                console.warn('Vector QR generation error:', err);
+                qrWrapper.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=214x214&margin=2&data=${encodeURIComponent(upiUri)}" alt="UPI QR Code for ₹${formattedAmount}" style="width:214px;height:214px;border-radius:8px;display:block;">`;
+            }
+        }
+
         async function loadSavedAddresses() {
             const data = await apiRequest('/addresses');
             const addresses = data.addresses || [];
             const addressesList = document.getElementById('savedAddressesList');
+            if (!addressesList) return;
 
             if (addresses.length === 0) {
                 return;
@@ -503,7 +741,6 @@
             updateOrderSummary();
         }
 
-        
         function selectPayment(element, type) {
             document.querySelectorAll('.payment-option').forEach(el => {
                 el.classList.remove('selected');
@@ -529,6 +766,9 @@
             const upiForm = document.getElementById('upiPaymentForm');
             if (upiForm) {
                 upiForm.style.display = (type === 'upi') ? 'block' : 'none';
+                if (type === 'upi') {
+                    renderInlineUpiQR();
+                }
             }
         }
 
@@ -554,11 +794,11 @@
             });
             document.getElementById(`step-${step}`).classList.add('active');
 
-            // If entering step 3 with UPI selected, refresh inline QR
             if (step === 3 && selectedPayment === 'upi') {
                 const upiForm = document.getElementById('upiPaymentForm');
                 if (upiForm) {
                     upiForm.style.display = 'block';
+                    populateItemSelector();
                     renderInlineUpiQR();
                 }
             }
@@ -576,52 +816,25 @@
             document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('active');
         }
 
-        let appliedCoupon = null;
-
         function updateOrderSummary() {
-            const cart = JSON.parse(localStorage.getItem('cart')) || [];
-            let subtotal = 0;
+            const totals = calculatePaymentTotals();
 
-            cart.forEach(item => {
-                subtotal += (parseInt(item.price) || 0) * (item.quantity || 1);
-            });
-
-            const delivery = selectedDelivery.cost;
-            let discount = 0;
-
-            if (appliedCoupon) {
-                if (appliedCoupon.discountType === 'percentage') {
-                    discount = Math.round((subtotal * appliedCoupon.discountValue) / 100);
-                    if (appliedCoupon.maxDiscountAmount) {
-                        discount = Math.min(discount, appliedCoupon.maxDiscountAmount);
-                    }
-                } else if (appliedCoupon.discountType === 'flat') {
-                    discount = Math.min(appliedCoupon.discountValue, subtotal);
-                } else if (appliedCoupon.discountType === 'shipping') {
-                    discount = Math.min(appliedCoupon.discountValue, delivery);
+            if (appliedCoupon && totals.discount > 0) {
+                const row = document.getElementById('sidebarDiscountRow');
+                if (row) {
+                    row.style.display = 'flex';
+                    document.getElementById('sidebarDiscountCode').textContent = appliedCoupon.code;
+                    document.getElementById('sidebarDiscount').textContent = '-₹' + totals.discount;
                 }
-
-                if (appliedCoupon.minOrderAmount && subtotal < appliedCoupon.minOrderAmount) {
-                    removePromo();
-                    alert('Order subtotal is now below the minimum required for coupon ' + appliedCoupon.code);
-                    return;
-                }
-
-                document.getElementById('sidebarDiscountRow').style.display = 'flex';
-                document.getElementById('sidebarDiscountCode').textContent = appliedCoupon.code;
-                document.getElementById('sidebarDiscount').textContent = '-₹' + discount;
             } else {
                 const row = document.getElementById('sidebarDiscountRow');
                 if (row) row.style.display = 'none';
             }
 
-            const tax = Math.floor(Math.max(0, subtotal - discount) * 0.1);
-            const total = Math.max(0, subtotal - discount + tax + delivery);
-
-            document.getElementById('sidebarSubtotal').textContent = '₹' + subtotal;
-            document.getElementById('sidebarDelivery').textContent = delivery === 0 ? 'FREE' : '₹' + delivery;
-            document.getElementById('sidebarTax').textContent = '₹' + tax;
-            document.getElementById('sidebarTotal').textContent = '₹' + total;
+            document.getElementById('sidebarSubtotal').textContent = '₹' + totals.subtotal;
+            document.getElementById('sidebarDelivery').textContent = totals.delivery === 0 ? 'FREE' : '₹' + totals.delivery;
+            document.getElementById('sidebarTax').textContent = '₹' + totals.tax;
+            document.getElementById('sidebarTotal').textContent = '₹' + totals.total;
 
             if (selectedPayment === 'upi') {
                 renderInlineUpiQR();
@@ -639,17 +852,17 @@
             // Payment
             const paymentMethods = {
                 card: '💳 Credit/Debit Card',
-                upi: '📱 Instant UPI / QR Code',
+                upi: '📱 Instant UPI / QR Code (Rakesh - rakeshreddy056012-1@okaxis)',
                 wallet: '💰 Digital Wallet',
                 bank: '🏦 Net Banking',
                 cod: '📦 Cash on Delivery'
             };
-            document.getElementById('reviewPayment').innerHTML = paymentMethods[selectedPayment];
+            document.getElementById('reviewPayment').innerHTML = paymentMethods[selectedPayment] || selectedPayment;
 
             // Items
-            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const totals = calculatePaymentTotals();
             let itemsHTML = '';
-            cart.forEach(item => {
+            totals.itemsToPay.forEach(item => {
                 const quantity = item.quantity || 1;
                 const itemTotal = (parseInt(item.price) || 0) * quantity;
                 itemsHTML += `<p>${item.name} (${quantity}x) - ₹${itemTotal}</p>`;
@@ -688,18 +901,6 @@
                 alert('Please select a payment method');
                 return false;
             }
-
-            if (selectedPayment === 'card') {
-                const cardNumber = document.getElementById('cardNumber').value.trim();
-                const expiry = document.getElementById('expiry').value.trim();
-                const cvv = document.getElementById('cvv').value.trim();
-
-                if (!cardNumber || !expiry || !cvv) {
-                    alert('Please fill in all card details');
-                    return false;
-                }
-            }
-
             return true;
         }
 
@@ -738,21 +939,20 @@
             }
 
             if (!config || !config.configured || !config.keyId) {
-                throw new Error('Online payment gateway is temporarily unavailable. Please select Cash on Delivery to place your order.');
+                throw new Error('Online payment gateway is temporarily unavailable. Please select Cash on Delivery or UPI QR Code.');
             }
 
             if (typeof window.Razorpay === 'undefined') {
-                throw new Error('Payment gateway library is not loaded. Please check your internet connection or select Cash on Delivery.');
+                throw new Error('Payment gateway library is not loaded. Please select Cash on Delivery or UPI QR Code.');
             }
 
-            // Create Razorpay order on server
             const createRes = await apiRequest('/payment/create-order', {
                 method: 'POST',
                 body: JSON.stringify({ amount: grandTotal })
             });
 
             if (!createRes || !createRes.order || !createRes.order.id) {
-                throw new Error('Could not create payment order with gateway. Please try again or select Cash on Delivery.');
+                throw new Error('Could not create payment order with gateway. Please try UPI QR Code or Cash on Delivery.');
             }
 
             const rzOrder = createRes.order;
@@ -848,28 +1048,13 @@
             }
 
             try {
-                const cart = await getCartData();
-                if (!cart.length) {
+                const totals = calculatePaymentTotals();
+                if (!totals.itemsToPay.length) {
                     alert('Your cart is empty. Please add items before checkout.');
                     return;
                 }
 
-                // Calculate grand total
-                let grandTotal = 0;
-                const sidebarTotalEl = document.getElementById('sidebarTotal');
-                if (sidebarTotalEl) {
-                    const match = sidebarTotalEl.textContent.match(/[\d,.]+/);
-                    if (match) grandTotal = parseFloat(match[0].replace(/,/g, '')) || 0;
-                }
-                if (!grandTotal) {
-                    let subtotal = 0;
-                    cart.forEach(item => {
-                        subtotal += (parseInt(item.price) || 0) * (item.quantity || 1);
-                    });
-                    const deliveryCost = (selectedDelivery && typeof selectedDelivery.cost === 'number') ? selectedDelivery.cost : 100;
-                    const tax = Math.round(subtotal * 0.1);
-                    grandTotal = Math.max(0, subtotal + tax + deliveryCost);
-                }
+                const grandTotal = totals.total;
 
                 // Sync cart items to server first
                 await syncCartToServer();
@@ -882,7 +1067,8 @@
                         address,
                         delivery: selectedDelivery,
                         payment: { type: 'cod', status: 'pending' },
-                        couponCode: appliedCoupon ? appliedCoupon.code : ''
+                        couponCode: appliedCoupon ? appliedCoupon.code : '',
+                        items: totals.itemsToPay
                     };
 
                     const data = await apiRequest('/orders', {
@@ -890,18 +1076,18 @@
                         body: JSON.stringify(payload)
                     });
 
-                    finalizeOrder(data.order, '🎉 Order placed successfully with Cash on Delivery!');
+                    finalizeOrder(data.order, totals.itemsToPay, '🎉 Order placed successfully with Cash on Delivery!');
                     return;
                 }
 
                 // -------------------------------------------------------------
-                // 2. UPI PAYMENT (Rakesh's Google Pay QR Code)
+                // 2. UPI PAYMENT (Rakesh\'s Dynamic Google Pay QR Code)
                 // Customer must enter their 12-digit UTR from GPay / PhonePe
                 // -------------------------------------------------------------
                 if (selectedPayment === 'upi') {
                     let utr = (document.getElementById('inlineUpiUtrInput')?.value || '').trim();
                     if (!utr || utr.length < 6) {
-                        utr = prompt('Please scan Rakesh\'s Google Pay QR code, complete payment, and enter the 12-digit UPI UTR / Transaction Reference number from your payment receipt:');
+                        utr = prompt('Please scan Rakesh\'s dynamic Google Pay QR code, complete payment of ₹' + grandTotal + ', and enter the 12-digit UPI UTR / Transaction Reference number from your payment receipt:');
                         if (!utr || utr.trim().length < 6) {
                             alert('❌ Order NOT placed. A valid UPI UTR / Transaction Reference number is required to confirm your payment. You can also choose Cash on Delivery.');
                             return;
@@ -916,7 +1102,8 @@
                             status: 'pending_verification',
                             providerPaymentId: utr.trim()
                         },
-                        couponCode: appliedCoupon ? appliedCoupon.code : ''
+                        couponCode: appliedCoupon ? appliedCoupon.code : '',
+                        items: totals.itemsToPay
                     };
 
                     const data = await apiRequest('/orders', {
@@ -924,7 +1111,7 @@
                         body: JSON.stringify(payload)
                     });
 
-                    finalizeOrder(data.order, '🎉 Order received! Your UPI Payment (UTR: ' + utr.trim() + ') has been submitted for bank verification. Thank you!');
+                    finalizeOrder(data.order, totals.itemsToPay, '🎉 Order received! Your UPI Payment for ₹' + grandTotal + ' (UTR: ' + utr.trim() + ') has been submitted for bank verification. Thank you!');
                     return;
                 }
 
@@ -949,7 +1136,8 @@
                         providerSignature: paymentResult.signature,
                         paidAt: new Date().toISOString()
                     },
-                    couponCode: appliedCoupon ? appliedCoupon.code : ''
+                    couponCode: appliedCoupon ? appliedCoupon.code : '',
+                    items: totals.itemsToPay
                 };
 
                 const data = await apiRequest('/orders', {
@@ -957,19 +1145,28 @@
                     body: JSON.stringify(payload)
                 });
 
-                finalizeOrder(data.order, '🎉 Payment received & verified! Your order has been placed.');
+                finalizeOrder(data.order, totals.itemsToPay, '🎉 Payment received & verified! Your order has been placed.');
             } catch (error) {
                 alert('Order placement error: ' + error.message);
             }
         }
 
-        function finalizeOrder(order, message) {
+        function finalizeOrder(order, purchasedItems, message) {
             if (message) alert(message);
             const storedOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
             storedOrders.unshift({ ...order, date: order.createdAt || new Date().toISOString() });
             localStorage.setItem('userOrders', JSON.stringify(storedOrders));
 
-            localStorage.removeItem('cart');
+            // Update cart: remove only the items purchased
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            if (Array.isArray(purchasedItems) && purchasedItems.length > 0 && purchasedItems.length < cart.length) {
+                const purchasedIds = new Set(purchasedItems.map(i => String(i.id || i.productId)));
+                const remainingCart = cart.filter(i => !purchasedIds.has(String(i.id || i.productId)));
+                localStorage.setItem('cart', JSON.stringify(remainingCart));
+            } else {
+                localStorage.removeItem('cart');
+            }
+
             window.location.href = 'order-confirmation.html?orderId=' + order.id;
         }
 
@@ -979,51 +1176,54 @@
             const messageEl = document.getElementById('promoMessage');
 
             if (!code) {
-                messageEl.innerHTML = '<span style="color:#ef4444;">Please enter a promo code</span>';
+                if (messageEl) messageEl.innerHTML = '<span style="color:#ef4444;">Please enter a promo code</span>';
                 return;
             }
 
-            const cart = JSON.parse(localStorage.getItem('cart')) || [];
-            let subtotal = 0;
-            cart.forEach(item => {
-                subtotal += (parseInt(item.price) || 0) * (item.quantity || 1);
-            });
-
-            if (!subtotal) {
-                messageEl.innerHTML = '<span style="color:#ef4444;">Your cart is empty</span>';
+            const totals = calculatePaymentTotals();
+            if (!totals.subtotal) {
+                if (messageEl) messageEl.innerHTML = '<span style="color:#ef4444;">Your cart is empty</span>';
                 return;
             }
 
             try {
-                messageEl.innerHTML = '<span style="color:#64748b;">Checking coupon...</span>';
+                if (messageEl) messageEl.innerHTML = '<span style="color:#64748b;">Checking coupon...</span>';
                 const res = await apiRequest('/coupons/validate', {
                     method: 'POST',
                     body: JSON.stringify({
                         code,
-                        subtotal,
+                        subtotal: totals.subtotal,
                         shipping: selectedDelivery.cost
                     })
                 });
 
                 appliedCoupon = res;
-                document.getElementById('promoInputContainer').style.display = 'none';
-                document.getElementById('appliedPromoBadge').style.display = 'flex';
-                document.getElementById('badgeCode').textContent = res.code;
-                document.getElementById('badgeText').textContent = res.message;
-                messageEl.innerHTML = '<span style="color:#16a34a;">✓ ' + res.message + '</span>';
+                const inputCont = document.getElementById('promoInputContainer');
+                if (inputCont) inputCont.style.display = 'none';
+                const badge = document.getElementById('appliedPromoBadge');
+                if (badge) badge.style.display = 'flex';
+                const badgeCode = document.getElementById('badgeCode');
+                if (badgeCode) badgeCode.textContent = res.code;
+                const badgeText = document.getElementById('badgeText');
+                if (badgeText) badgeText.textContent = res.message;
+                if (messageEl) messageEl.innerHTML = '<span style="color:#16a34a;">✓ ' + res.message + '</span>';
 
                 updateOrderSummary();
             } catch (err) {
-                messageEl.innerHTML = '<span style="color:#ef4444;">' + err.message + '</span>';
+                if (messageEl) messageEl.innerHTML = '<span style="color:#ef4444;">' + err.message + '</span>';
             }
         }
 
         function removePromo() {
             appliedCoupon = null;
-            document.getElementById('promoInputContainer').style.display = 'flex';
-            document.getElementById('appliedPromoBadge').style.display = 'none';
-            document.getElementById('promoCode').value = '';
-            document.getElementById('promoMessage').innerHTML = 'Popular: <b>WELCOME10</b> (10% off), <b>EPRIS500</b> (₹500 off), or <b>FREESHIP</b>';
+            const inputCont = document.getElementById('promoInputContainer');
+            if (inputCont) inputCont.style.display = 'flex';
+            const badge = document.getElementById('appliedPromoBadge');
+            if (badge) badge.style.display = 'none';
+            const promoCodeInput = document.getElementById('promoCode');
+            if (promoCodeInput) promoCodeInput.value = '';
+            const messageEl = document.getElementById('promoMessage');
+            if (messageEl) messageEl.innerHTML = 'Popular: <b>WELCOME10</b> (10% off), <b>EPRIS500</b> (₹500 off), or <b>FREESHIP</b>';
             updateOrderSummary();
         }
     </script>

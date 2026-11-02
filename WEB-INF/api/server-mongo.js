@@ -862,14 +862,15 @@ app.delete('/api/admin/coupons/:code', authenticate, requireAdmin, async (req, r
 
 app.post('/api/orders', authenticate, async (req, res, next) => {
     try {
-        const { address, delivery = { type: 'standard', cost: 100 }, payment = { type: 'cod' }, couponCode = '' } = req.body;
+        const { address, delivery = { type: 'standard', cost: 100 }, payment = { type: 'cod' }, couponCode = '', items: customItems } = req.body;
         const cart = await getOrCreateCart(req.user.id);
-        if (!cart.items.length) return res.status(400).json({ message: 'Cannot place an order with an empty cart' });
+        const orderItems = (Array.isArray(customItems) && customItems.length > 0) ? customItems : cart.items;
+        if (!orderItems.length) return res.status(400).json({ message: 'Cannot place an order with an empty cart' });
         if (!address || !address.name || !address.street || !address.city || !address.state || !address.zip) {
             return res.status(400).json({ message: 'A complete shipping address is required' });
         }
 
-        const subtotal = cart.items.reduce((total, item) => total + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0);
+        const subtotal = orderItems.reduce((total, item) => total + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0);
         const shipping = Number(delivery.cost) || 0;
         const tax = Math.round(subtotal * 0.1);
         let discount = 0;
@@ -911,7 +912,7 @@ app.post('/api/orders', authenticate, async (req, res, next) => {
         const order = await Order.create({
             id: createId('ord'),
             userId: req.user.id,
-            items: cart.items,
+            items: orderItems,
             address,
             delivery: { type: delivery.type || 'standard', cost: shipping },
             payment: {
@@ -930,7 +931,12 @@ app.post('/api/orders', authenticate, async (req, res, next) => {
             status: orderStatus
         });
 
-        cart.items = [];
+        if (Array.isArray(customItems) && customItems.length > 0) {
+            const purchasedIds = new Set(customItems.map(i => String(i.productId || i.id)));
+            cart.items = cart.items.filter(i => !purchasedIds.has(String(i.productId || i.id)));
+        } else {
+            cart.items = [];
+        }
         await cart.save();
 
         // Send confirmation email (non-blocking)
