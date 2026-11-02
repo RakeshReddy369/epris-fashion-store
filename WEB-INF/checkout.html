@@ -178,24 +178,27 @@
                         <h2>Payment Method</h2>
 
                         <div class="payment-options">
+                            <div class="payment-option selected" onclick="selectPayment(this, 'upi')">
+                                <input type="radio" name="payment" value="upi" checked onchange="selectPayment(this.closest('.payment-option'), 'upi')">
+                                <div class="option-content">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <h3 style="margin: 0;">📱 Instant UPI / QR Code</h3>
+                                        <span style="background: #eef2ff; color: #4f46e5; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px;">RECOMMENDED</span>
+                                    </div>
+                                    <p style="margin: 4px 0 0;">Google Pay, PhonePe, Paytm, BHIM (Scan QR to pay)</p>
+                                </div>
+                            </div>
+
                             <div class="payment-option" onclick="selectPayment(this, 'card')">
-                                <input type="radio" name="payment" value="card" checked>
+                                <input type="radio" name="payment" value="card" onchange="selectPayment(this.closest('.payment-option'), 'card')">
                                 <div class="option-content">
                                     <h3>💳 Credit/Debit Card</h3>
                                     <p>Visa, Mastercard, American Express</p>
                                 </div>
                             </div>
 
-                            <div class="payment-option" onclick="selectPayment(this, 'upi')">
-                                <input type="radio" name="payment" value="upi">
-                                <div class="option-content">
-                                    <h3>📱 UPI</h3>
-                                    <p>Google Pay, PhonePe, Paytm</p>
-                                </div>
-                            </div>
-
                             <div class="payment-option" onclick="selectPayment(this, 'wallet')">
-                                <input type="radio" name="payment" value="wallet">
+                                <input type="radio" name="payment" value="wallet" onchange="selectPayment(this.closest('.payment-option'), 'wallet')">
                                 <div class="option-content">
                                     <h3>💰 Digital Wallet</h3>
                                     <p>Amazon Pay, Mobikwik</p>
@@ -203,7 +206,7 @@
                             </div>
 
                             <div class="payment-option" onclick="selectPayment(this, 'bank')">
-                                <input type="radio" name="payment" value="bank">
+                                <input type="radio" name="payment" value="bank" onchange="selectPayment(this.closest('.payment-option'), 'bank')">
                                 <div class="option-content">
                                     <h3>🏦 Net Banking</h3>
                                     <p>Direct Bank Transfer</p>
@@ -211,7 +214,7 @@
                             </div>
 
                             <div class="payment-option" onclick="selectPayment(this, 'cod')">
-                                <input type="radio" name="payment" value="cod">
+                                <input type="radio" name="payment" value="cod" onchange="selectPayment(this.closest('.payment-option'), 'cod')">
                                 <div class="option-content">
                                     <h3>📦 Cash on Delivery</h3>
                                     <p>Pay when you receive your order</p>
@@ -240,6 +243,52 @@
                                     <input type="text" id="cvv" placeholder="123" maxlength="4" required>
                                 </div>
                             </div>
+                        </div>
+
+                        
+                        <!-- UPI Inline Payment Box (Shown when UPI is selected in Step 3) -->
+                        <div id="upiPaymentForm" class="payment-form" style="display: block; padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; margin-top: 20px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <span style="background: #eef2ff; color: #4f46e5; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">⚡ Scan & Pay via UPI</span>
+                                <span style="font-size: 12px; color: #16a34a; font-weight: 600;">✓ Instant Verification</span>
+                            </div>
+
+                            <div style="display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; flex-wrap: wrap;">
+                                <span class="upi-app-pill gpay">GPay</span>
+                                <span class="upi-app-pill phonepe">PhonePe</span>
+                                <span class="upi-app-pill paytm">Paytm</span>
+                                <span class="upi-app-pill bhim">BHIM</span>
+                                <span class="upi-app-pill cred">CRED</span>
+                            </div>
+
+                            <div style="margin-bottom: 8px;">
+                                <p style="font-size: 12px; color: #64748b; margin: 0 0 2px;">Total Payable Amount:</p>
+                                <strong id="inlineUpiAmount" style="font-size: 28px; font-weight: 800; color: #0f172a;">₹0</strong>
+                            </div>
+
+                            <!-- QR Code Box -->
+                            <div style="display: inline-block; padding: 12px; background: #ffffff; border: 2px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); margin: 8px 0 14px;">
+                                <div id="inlineUpiQrContainer" style="width: 200px; height: 200px; margin: 0 auto; display: flex; align-items: center; justify-content: center;"></div>
+                            </div>
+
+                            <!-- UPI ID & Copy -->
+                            <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; max-width: 340px; margin: 0 auto 14px; font-size: 13px;">
+                                <span style="color: #64748b; font-weight: 600;">UPI ID:</span>
+                                <strong id="inlineUpiIdDisplay" style="font-family: monospace; color: #0f172a; font-size: 13px;">epris.fashion@upi</strong>
+                                <button type="button" id="inlineUpiCopyBtn" onclick="copyInlineUpiId()" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">📋 Copy</button>
+                            </div>
+
+                            <!-- Mobile Deep Link -->
+                            <a id="inlineUpiIntentBtn" href="#" class="epris-upi-intent-btn" style="display: none; max-width: 340px; margin: 0 auto 14px;">
+                                📱 Tap to Pay with UPI App (GPay / PhonePe)
+                            </a>
+
+                            <!-- UTR Reference Input -->
+                            <div style="max-width: 340px; margin: 0 auto 12px; text-align: left;">
+                                <label for="inlineUpiUtrInput" style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px;">After scanning, enter 12-digit UPI UTR / Ref No. (Optional):</label>
+                                <input type="text" id="inlineUpiUtrInput" placeholder="e.g. 412389745612" maxlength="16" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; box-sizing: border-box;">
+                            </div>
+                            <p style="font-size: 12px; color: #94a3b8; margin: 0;">Scan with your mobile camera or any UPI app, then click Review Order.</p>
                         </div>
 
                         <div class="step-buttons">
@@ -389,7 +438,7 @@
     <script>
         let currentStep = 1;
         let selectedDelivery = { type: 'standard', cost: 100 };
-        let selectedPayment = 'card';
+        let selectedPayment = 'upi';
         let selectedAddress = null;
 
         // Initialize checkout
@@ -399,6 +448,9 @@
             loadCheckout();
             loadSavedAddresses();
             updateOrderSummary();
+            if (selectedPayment === 'upi') {
+                renderInlineUpiQR();
+            }
         });
 
         async function getCartData() {
@@ -511,20 +563,138 @@
             updateOrderSummary();
         }
 
+        
+        async function renderInlineUpiQR() {
+            let upiId = 'epris.fashion@upi';
+            let upiName = 'EPRIS Fashion';
+
+            function updateQR(id, name) {
+                let grandTotal = 0;
+                const sidebarTotalEl = document.getElementById('sidebarTotal');
+                if (sidebarTotalEl) {
+                    const match = sidebarTotalEl.textContent.match(/[\d,.]+/);
+                    if (match) grandTotal = parseFloat(match[0].replace(/,/g, '')) || 0;
+                }
+                if (!grandTotal) {
+                    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+                    let subtotal = 0;
+                    cart.forEach(item => {
+                        subtotal += (parseInt(item.price) || 0) * (item.quantity || 1);
+                    });
+                    const deliveryCost = (selectedDelivery && typeof selectedDelivery.cost === 'number') ? selectedDelivery.cost : 100;
+                    let discount = 0;
+                    if (appliedCoupon) {
+                        if (appliedCoupon.discountType === 'percentage') {
+                            discount = Math.round((subtotal * appliedCoupon.discountValue) / 100);
+                            if (appliedCoupon.maxDiscountAmount) discount = Math.min(discount, appliedCoupon.maxDiscountAmount);
+                        } else if (appliedCoupon.discountType === 'flat') {
+                            discount = Math.min(appliedCoupon.discountValue, subtotal);
+                        } else if (appliedCoupon.discountType === 'shipping') {
+                            discount = Math.min(appliedCoupon.discountValue, deliveryCost);
+                        }
+                    }
+                    const tax = Math.floor(Math.max(0, subtotal - discount) * 0.1);
+                    grandTotal = Math.max(0, subtotal - discount + tax + deliveryCost);
+                }
+
+                const displayAmount = '₹' + Math.round(grandTotal).toLocaleString('en-IN');
+                const amtEl = document.getElementById('inlineUpiAmount');
+                if (amtEl) amtEl.textContent = displayAmount;
+
+                const idEl = document.getElementById('inlineUpiIdDisplay');
+                if (idEl) idEl.textContent = id;
+
+                const upiUri = `upi://pay?pa=${encodeURIComponent(id)}&pn=${encodeURIComponent(name)}&am=${grandTotal.toFixed(2)}&cu=INR&tn=${encodeURIComponent('EPRIS Order')}`;
+
+                const qrContainer = document.getElementById('inlineUpiQrContainer');
+                if (qrContainer) {
+                    let rendered = false;
+                    if (typeof EprisInvoice !== 'undefined' && typeof EprisInvoice.generateQRSVG === 'function') {
+                        try {
+                            const svg = EprisInvoice.generateQRSVG(upiUri, 200);
+                            if (svg && svg.includes('<svg')) {
+                                qrContainer.innerHTML = svg;
+                                rendered = true;
+                            }
+                        } catch (e) {
+                            console.warn('SVG QR error:', e);
+                        }
+                    }
+                    if (!rendered) {
+                        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=2&data=${encodeURIComponent(upiUri)}" alt="UPI QR" width="200" height="200" style="border-radius:8px; display:block; margin:0 auto;">`;
+                    }
+                }
+
+                const mobileBtn = document.getElementById('inlineUpiIntentBtn');
+                if (mobileBtn) {
+                    if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
+                        mobileBtn.href = upiUri;
+                        mobileBtn.style.display = 'block';
+                    } else {
+                        mobileBtn.style.display = 'none';
+                    }
+                }
+            }
+
+            // 1. Instant synchronous render
+            updateQR(upiId, upiName);
+
+            // 2. Fetch server-configured UPI details if available
+            try {
+                const configRes = await apiRequest('/payment/upi-config');
+                if (configRes && configRes.upiId && (configRes.upiId !== upiId || configRes.upiName !== upiName)) {
+                    upiId = configRes.upiId;
+                    upiName = configRes.upiName || 'EPRIS Fashion';
+                    updateQR(upiId, upiName);
+                }
+            } catch (e) {
+                // Keep default
+            }
+        }
+
+        function copyInlineUpiId() {
+            const upiId = document.getElementById('inlineUpiIdDisplay').textContent;
+            navigator.clipboard.writeText(upiId).then(() => {
+                const btn = document.getElementById('inlineUpiCopyBtn');
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
+            }).catch(() => {
+                prompt('Copy UPI ID:', upiId);
+            });
+        }
+
         function selectPayment(element, type) {
             document.querySelectorAll('.payment-option').forEach(el => {
                 el.classList.remove('selected');
             });
-            element.classList.add('selected');
-            element.querySelector('input[type="radio"]').checked = true;
+            if (element) {
+                element.classList.add('selected');
+                const radio = element.querySelector('input[type="radio"]');
+                if (radio) radio.checked = true;
+            } else {
+                const targetRadio = document.querySelector(`input[name="payment"][value="${type}"]`);
+                if (targetRadio) {
+                    targetRadio.checked = true;
+                    targetRadio.closest('.payment-option')?.classList.add('selected');
+                }
+            }
             selectedPayment = type;
 
             // Show/hide card form
             const cardForm = document.getElementById('cardPaymentForm');
-            if (type === 'card') {
-                cardForm.style.display = 'block';
-            } else {
-                cardForm.style.display = 'none';
+            if (cardForm) {
+                cardForm.style.display = (type === 'card') ? 'block' : 'none';
+            }
+
+            // Show/hide UPI inline QR box
+            const upiForm = document.getElementById('upiPaymentForm');
+            if (upiForm) {
+                if (type === 'upi') {
+                    upiForm.style.display = 'block';
+                    renderInlineUpiQR();
+                } else {
+                    upiForm.style.display = 'none';
+                }
             }
         }
 
@@ -549,6 +719,15 @@
                 el.classList.remove('active');
             });
             document.getElementById(`step-${step}`).classList.add('active');
+
+            // If entering step 3 with UPI selected, refresh inline QR
+            if (step === 3 && selectedPayment === 'upi') {
+                const upiForm = document.getElementById('upiPaymentForm');
+                if (upiForm) {
+                    upiForm.style.display = 'block';
+                    renderInlineUpiQR();
+                }
+            }
 
             // Update review section on step 4
             if (step === 4) {
@@ -609,6 +788,10 @@
             document.getElementById('sidebarDelivery').textContent = delivery === 0 ? 'FREE' : '₹' + delivery;
             document.getElementById('sidebarTax').textContent = '₹' + tax;
             document.getElementById('sidebarTotal').textContent = '₹' + total;
+
+            if (selectedPayment === 'upi') {
+                renderInlineUpiQR();
+            }
         }
 
         function updateReviewSection() {
@@ -622,7 +805,7 @@
             // Payment
             const paymentMethods = {
                 card: '💳 Credit/Debit Card',
-                upi: '📱 UPI',
+                upi: '📱 Instant UPI / QR Code',
                 wallet: '💰 Digital Wallet',
                 bank: '🏦 Net Banking',
                 cod: '📦 Cash on Delivery'
@@ -809,7 +992,7 @@
             document.getElementById('upiOrderTag').textContent = `Order #${order.id}`;
             document.getElementById('upiModalAmount').textContent = `₹${Number(order.total || 0).toLocaleString('en-IN')}`;
             document.getElementById('upiIdDisplay').textContent = upiId;
-            document.getElementById('upiUtrInput').value = '';
+            document.getElementById('upiUtrInput').value = document.getElementById('inlineUpiUtrInput')?.value || '';
 
             // Render vector SVG QR Code
             const qrContainer = document.getElementById('upiQrCodeContainer');
