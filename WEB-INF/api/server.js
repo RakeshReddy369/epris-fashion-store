@@ -864,20 +864,28 @@ app.post('/api/orders', authenticate, (req, res) => {
         }
     }
 
+    const isPaid = payment && payment.status === 'paid';
+    const isCod = payment && payment.type === 'cod';
+
     const order = {
         id: createId('ord'),
         userId: req.userId,
         items: cart.items,
         address,
         delivery: { type: delivery.type, cost: shipping },
-        payment: { type: payment.type },
+        payment: {
+            type: payment.type || 'cod',
+            status: isPaid ? 'paid' : (isCod ? 'pending' : (payment.status || 'pending')),
+            providerPaymentId: payment.providerPaymentId || payment.utrNumber || (isPaid ? ('UPI_' + Date.now()) : null),
+            paidAt: isPaid ? (payment.paidAt || new Date().toISOString()) : null
+        },
         subtotal,
         tax,
         shipping,
         discount,
         couponCode: appliedCode,
         total: Math.max(0, subtotal - discount + tax + shipping),
-        status: 'Pending',
+        status: (isPaid || isCod) ? 'Confirmed' : 'Pending',
         createdAt: new Date().toISOString()
     };
 

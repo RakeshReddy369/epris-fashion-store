@@ -888,20 +888,28 @@ app.post('/api/orders', authenticate, async (req, res, next) => {
         }
 
         const total = Math.max(0, subtotal - discount + tax + shipping);
+        const isPaid = payment && payment.status === 'paid';
+        const isCod = payment && payment.type === 'cod';
+
         const order = await Order.create({
             id: createId('ord'),
             userId: req.user.id,
             items: cart.items,
             address,
             delivery: { type: delivery.type || 'standard', cost: shipping },
-            payment: { type: payment.type || 'cod', status: payment.status || 'pending' },
+            payment: {
+                type: payment.type || 'cod',
+                status: isPaid ? 'paid' : (isCod ? 'pending' : (payment.status || 'pending')),
+                providerPaymentId: payment.providerPaymentId || payment.utrNumber || (isPaid ? ('UPI_' + Date.now()) : null),
+                paidAt: isPaid ? (payment.paidAt || new Date().toISOString()) : null
+            },
             subtotal,
             tax,
             shipping,
             discount,
             couponCode: appliedCode,
             total,
-            status: 'Pending'
+            status: (isPaid || isCod) ? 'Confirmed' : 'Pending'
         });
 
         cart.items = [];

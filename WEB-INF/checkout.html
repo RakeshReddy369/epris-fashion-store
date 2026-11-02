@@ -383,7 +383,7 @@
     <div id="eprisUpiModal" class="epris-upi-modal-overlay" style="display: none;">
         <div class="epris-upi-modal-card">
             <div class="epris-upi-modal-header">
-                <div class="epris-upi-badge">⚡ Instant UPI Payment</div>
+                <div class="epris-upi-badge">⚡ Complete UPI Payment to Place Order</div>
                 <button type="button" class="epris-upi-close-btn" onclick="closeUpiModal()">&times;</button>
             </div>
             
@@ -396,7 +396,7 @@
             </div>
 
             <div class="epris-upi-body">
-                <p class="epris-upi-order-tag" id="upiOrderTag">Order #ord_...</p>
+                <p class="epris-upi-order-tag" id="upiOrderTag">Scan & Pay to Confirm Order</p>
                 <div class="epris-upi-amount" id="upiModalAmount">₹0</div>
                 <p class="epris-upi-instruction">Scan with Google Pay, PhonePe, Paytm, or any UPI app</p>
 
@@ -425,8 +425,8 @@
             </div>
 
             <div class="epris-upi-actions">
-                <button type="button" class="epris-upi-btn-cancel" onclick="cancelUpiPayment()">Pay Later / Cancel</button>
-                <button type="button" class="epris-upi-btn-confirm" id="upiConfirmPaidBtn" onclick="confirmUpiPayment()">✓ I Have Paid (Confirm Order)</button>
+                <button type="button" class="epris-upi-btn-cancel" onclick="cancelUpiPayment()">❌ Cancel (Do Not Place Order)</button>
+                <button type="button" class="epris-upi-btn-confirm" id="upiConfirmPaidBtn" onclick="confirmUpiPayment()">✓ I Have Paid (Place & Confirm Order)</button>
             </div>
         </div>
     </div>
@@ -895,7 +895,7 @@
             }
         }
 
-        async function handleRazorpayPayment(order, address) {
+        async function handleRazorpayGateway(grandTotal, address) {
             let config = { keyId: '', configured: false };
             try {
                 config = await apiRequest('/payment/config');
@@ -905,19 +905,19 @@
 
             const createRes = await apiRequest('/payment/create-order', {
                 method: 'POST',
-                body: JSON.stringify({ amount: order.total })
+                body: JSON.stringify({ amount: grandTotal })
             });
 
             const rzOrder = createRes.order;
 
             if (window.Razorpay && config.configured && !createRes.simulated) {
-                return new Promise((resolve, reject) => {
+                return new Promise((resolve) => {
                     const options = {
                         key: config.keyId,
                         amount: rzOrder.amount,
                         currency: rzOrder.currency || 'INR',
                         name: 'EPRIS Fashion',
-                        description: 'Order #' + order.id,
+                        description: 'Online Order Payment',
                         order_id: rzOrder.id,
                         prefill: {
                             name: address.name,
@@ -932,97 +932,102 @@
                                     body: JSON.stringify({
                                         razorpay_order_id: response.razorpay_order_id,
                                         razorpay_payment_id: response.razorpay_payment_id,
-                                        razorpay_signature: response.razorpay_signature,
-                                        orderId: order.id
+                                        razorpay_signature: response.razorpay_signature
                                     })
                                 });
-                                resolve(true);
+                                resolve({ paid: true, paymentId: response.razorpay_payment_id });
                             } catch (err) {
-                                reject(new Error('Payment verification failed: ' + err.message));
+                                alert('Payment verification error: ' + err.message);
+                                resolve({ paid: false });
                             }
                         },
                         modal: {
-                            ondismiss: function() { resolve(false); }
+                            ondismiss: function() { resolve({ paid: false }); }
                         }
                     };
                     const rzp = new window.Razorpay(options);
                     rzp.open();
                 });
             } else {
-                const proceed = confirm('[Razorpay Payment Gateway]\n\nTotal: ₹' + order.total + '\nMethod: ' + selectedPayment.toUpperCase() + '\nOrder ID: ' + order.id + '\n\nClick OK to confirm payment, or Cancel to leave pending.');
+                const proceed = confirm('[Razorpay Payment Gateway]\n\nTotal: ₹' + Math.round(grandTotal) + '\nMethod: ' + selectedPayment.toUpperCase() + '\n\nClick OK to simulate successful payment and place order, or Cancel to go back without placing order.');
                 if (proceed) {
-                    await apiRequest('/payment/verify', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            razorpay_order_id: rzOrder.id || ('rzp_sim_' + Date.now()),
-                            razorpay_payment_id: 'pay_sim_' + Date.now(),
-                            razorpay_signature: 'sig_simulated_success',
-                            orderId: order.id
-                        })
-                    });
-                    return true;
+                    return { paid: true, paymentId: 'pay_sim_' + Date.now() };
                 } else {
-                    return false;
+                    return { paid: false };
                 }
             }
         }
 
-        
-        let activeUpiOrder = null;
         let upiPaymentResolve = null;
 
-        async function handleUpiPayment(order, address) {
-            activeUpiOrder = order;
-            let upiConfig = { upiId: 'epris.fashion@upi', upiName: 'EPRIS Fashion' };
-            try {
-                const configRes = await apiRequest('/payment/upi-config');
-                if (configRes && configRes.upiId) upiConfig = configRes;
-            } catch (e) {
-                console.warn('Could not fetch UPI config:', e.message);
-            }
+        async function openUpiPaymentModal(totalAmount, address) {
+            let upiId = 'epris.fashion@upi';
+            let upiName = 'EPRIS Fashion';
+            const amount = Number(totalAmount || 0).toFixed(2);
+            const note = 'EPRIS Fashion Order';
 
-            const upiId = upiConfig.upiId || 'epris.fashion@upi';
-            const upiName = upiConfig.upiName || 'EPRIS Fashion';
-            const amount = Number(order.total || 0).toFixed(2);
-            const note = 'Order ' + order.id;
+            function renderModalQR(id, name) {
+                const upiUri = `upi://pay?pa=${encodeURIComponent(id)}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
 
-            // Standard NPCI UPI URI
-            const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+                document.getElementById('upiOrderTag').textContent = '⚡ Scan & Pay to Confirm Order';
+                document.getElementById('upiModalAmount').textContent = '₹' + Math.round(Number(totalAmount || 0)).toLocaleString('en-IN');
+                document.getElementById('upiIdDisplay').textContent = id;
+                document.getElementById('upiUtrInput').value = document.getElementById('inlineUpiUtrInput')?.value || '';
 
-            document.getElementById('upiOrderTag').textContent = `Order #${order.id}`;
-            document.getElementById('upiModalAmount').textContent = `₹${Number(order.total || 0).toLocaleString('en-IN')}`;
-            document.getElementById('upiIdDisplay').textContent = upiId;
-            document.getElementById('upiUtrInput').value = document.getElementById('inlineUpiUtrInput')?.value || '';
+                const qrContainer = document.getElementById('upiQrCodeContainer');
+                let qrRendered = false;
 
-            // Render vector SVG QR Code
-            const qrContainer = document.getElementById('upiQrCodeContainer');
-            let qrRendered = false;
+                if (typeof EprisInvoice !== 'undefined' && typeof EprisInvoice.generateQRSVG === 'function') {
+                    try {
+                        const svg = EprisInvoice.generateQRSVG(upiUri, 200);
+                        if (svg && svg.includes('<svg')) {
+                            qrContainer.innerHTML = svg;
+                            qrRendered = true;
+                        }
+                    } catch (err) {
+                        console.warn('Vector QR failed:', err);
+                    }
+                }
 
-            if (typeof EprisInvoice !== 'undefined' && typeof EprisInvoice.generateQRSVG === 'function') {
-                try {
-                    qrContainer.innerHTML = EprisInvoice.generateQRSVG(upiUri, 200);
-                    qrRendered = true;
-                } catch (err) {
-                    console.warn('Vector QR failed, falling back to image QR:', err);
+                if (!qrRendered) {
+                    qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=2&data=${encodeURIComponent(upiUri)}" alt="UPI Payment QR Code" width="200" height="200">`;
+                }
+
+                const intentBtn = document.getElementById('upiIntentLink');
+                if (intentBtn) {
+                    if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
+                        intentBtn.href = upiUri;
+                        intentBtn.style.display = 'block';
+                    } else {
+                        intentBtn.style.display = 'none';
+                    }
                 }
             }
 
-            if (!qrRendered) {
-                qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=2&data=${encodeURIComponent(upiUri)}" alt="UPI Payment QR Code" width="200" height="200">`;
-            }
+            // 1. Instant synchronous render
+            renderModalQR(upiId, upiName);
 
-            // Mobile Deep Link
-            const intentBtn = document.getElementById('upiIntentLink');
-            if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
-                intentBtn.href = upiUri;
-                intentBtn.style.display = 'block';
-            } else {
-                intentBtn.style.display = 'none';
+            // 2. Fetch server-configured UPI details if available
+            try {
+                const configRes = await apiRequest('/payment/upi-config');
+                if (configRes && configRes.upiId && (configRes.upiId !== upiId || configRes.upiName !== upiName)) {
+                    upiId = configRes.upiId;
+                    upiName = configRes.upiName || 'EPRIS Fashion';
+                    renderModalQR(upiId, upiName);
+                }
+            } catch (e) {
+                console.warn('Could not fetch UPI config:', e.message);
             }
 
             // Show Modal
             document.getElementById('eprisUpiModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
+
+            const confirmBtn = document.getElementById('upiConfirmPaidBtn');
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = '✓ I Have Paid (Place & Confirm Order)';
+            }
 
             return new Promise((resolve) => {
                 upiPaymentResolve = resolve;
@@ -1033,7 +1038,7 @@
             document.getElementById('eprisUpiModal').style.display = 'none';
             document.body.style.overflow = '';
             if (upiPaymentResolve) {
-                upiPaymentResolve(false);
+                upiPaymentResolve({ paid: false });
                 upiPaymentResolve = null;
             }
         }
@@ -1042,32 +1047,19 @@
             closeUpiModal();
         }
 
-        async function confirmUpiPayment() {
-            if (!activeUpiOrder) return;
-            const utr = document.getElementById('upiUtrInput').value.trim();
+        function confirmUpiPayment() {
+            const utr = (document.getElementById('upiUtrInput').value || '').trim();
             const confirmBtn = document.getElementById('upiConfirmPaidBtn');
-            confirmBtn.disabled = true;
-            confirmBtn.textContent = 'Verifying...';
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = 'Placing Order...';
+            }
 
-            try {
-                await apiRequest('/payment/upi/confirm', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        orderId: activeUpiOrder.id,
-                        utrNumber: utr
-                    })
-                });
-
-                document.getElementById('eprisUpiModal').style.display = 'none';
-                document.body.style.overflow = '';
-                if (upiPaymentResolve) {
-                    upiPaymentResolve(true);
-                    upiPaymentResolve = null;
-                }
-            } catch (err) {
-                alert('Could not verify payment: ' + err.message);
-                confirmBtn.disabled = false;
-                confirmBtn.textContent = '✓ I Have Paid (Confirm Order)';
+            document.getElementById('eprisUpiModal').style.display = 'none';
+            document.body.style.overflow = '';
+            if (upiPaymentResolve) {
+                upiPaymentResolve({ paid: true, utrNumber: utr });
+                upiPaymentResolve = null;
             }
         }
 
@@ -1089,13 +1081,18 @@
             }
 
             const address = {
-                name: document.getElementById('fullName').value,
-                phone: document.getElementById('phone').value,
-                street: document.getElementById('streetAddress').value,
-                city: document.getElementById('city').value,
-                state: document.getElementById('state').value,
-                zip: document.getElementById('zipCode').value
+                name: document.getElementById('fullName').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                street: document.getElementById('streetAddress').value.trim(),
+                city: document.getElementById('city').value.trim(),
+                state: document.getElementById('state').value.trim(),
+                zip: document.getElementById('zipCode').value.trim()
             };
+
+            if (!address.name || !address.phone || !address.street || !address.city || !address.state || !address.zip) {
+                alert('Please fill in all shipping address fields before placing your order.');
+                return;
+            }
 
             try {
                 const cart = await getCartData();
@@ -1104,12 +1101,95 @@
                     return;
                 }
 
+                // Calculate grand total
+                let grandTotal = 0;
+                const sidebarTotalEl = document.getElementById('sidebarTotal');
+                if (sidebarTotalEl) {
+                    const match = sidebarTotalEl.textContent.match(/[\d,.]+/);
+                    if (match) grandTotal = parseFloat(match[0].replace(/,/g, '')) || 0;
+                }
+                if (!grandTotal) {
+                    let subtotal = 0;
+                    cart.forEach(item => {
+                        subtotal += (parseInt(item.price) || 0) * (item.quantity || 1);
+                    });
+                    const deliveryCost = (selectedDelivery && typeof selectedDelivery.cost === 'number') ? selectedDelivery.cost : 100;
+                    const tax = Math.round(subtotal * 0.1);
+                    grandTotal = Math.max(0, subtotal + tax + deliveryCost);
+                }
+
+                // Sync cart items to server
                 await syncCartToServer();
+
+                // -------------------------------------------------------------
+                // 1. CASH ON DELIVERY (COD): Place order immediately
+                // -------------------------------------------------------------
+                if (selectedPayment === 'cod') {
+                    const payload = {
+                        address,
+                        delivery: selectedDelivery,
+                        payment: { type: 'cod', status: 'pending' },
+                        couponCode: appliedCoupon ? appliedCoupon.code : ''
+                    };
+
+                    const data = await apiRequest('/orders', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+
+                    finalizeOrder(data.order, '🎉 Order placed successfully with Cash on Delivery!');
+                    return;
+                }
+
+                // -------------------------------------------------------------
+                // 2. INSTANT UPI PAYMENT: Placed ONLY AFTER payment is confirmed
+                // -------------------------------------------------------------
+                if (selectedPayment === 'upi') {
+                    const upiRes = await openUpiPaymentModal(grandTotal, address);
+                    if (!upiRes || !upiRes.paid) {
+                        alert('Payment was not completed. Your order has NOT been placed and your cart is saved. You can try again or select Cash on Delivery.');
+                        return;
+                    }
+
+                    const payload = {
+                        address,
+                        delivery: selectedDelivery,
+                        payment: {
+                            type: 'upi',
+                            status: 'paid',
+                            utrNumber: upiRes.utrNumber || ('UPI_' + Date.now()),
+                            paidAt: new Date().toISOString()
+                        },
+                        couponCode: appliedCoupon ? appliedCoupon.code : ''
+                    };
+
+                    const data = await apiRequest('/orders', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+
+                    finalizeOrder(data.order, '🎉 UPI Payment confirmed! Your order has been placed successfully.');
+                    return;
+                }
+
+                // -------------------------------------------------------------
+                // 3. CARD / ONLINE GATEWAY: Placed ONLY AFTER gateway completes
+                // -------------------------------------------------------------
+                const cardRes = await handleRazorpayGateway(grandTotal, address);
+                if (!cardRes || !cardRes.paid) {
+                    alert('Payment was not completed. Your order has NOT been placed and your cart is saved. You can try again or select Cash on Delivery.');
+                    return;
+                }
 
                 const payload = {
                     address,
                     delivery: selectedDelivery,
-                    payment: { type: selectedPayment },
+                    payment: {
+                        type: selectedPayment,
+                        status: 'paid',
+                        providerPaymentId: cardRes.paymentId || ('CARD_' + Date.now()),
+                        paidAt: new Date().toISOString()
+                    },
                     couponCode: appliedCoupon ? appliedCoupon.code : ''
                 };
 
@@ -1118,35 +1198,20 @@
                     body: JSON.stringify(payload)
                 });
 
-                if (selectedPayment === 'upi') {
-                    const paid = await handleUpiPayment(data.order, address);
-                    if (paid) {
-                        data.order.status = 'Confirmed';
-                        data.order.payment = { type: 'upi', status: 'paid' };
-                        alert('🎉 UPI Payment received & order confirmed!');
-                    } else {
-                        alert('Order created with UPI Payment Pending. You can complete payment anytime from your Profile.');
-                    }
-                } else if (selectedPayment !== 'cod') {
-                    const paid = await handleRazorpayPayment(data.order, address);
-                    if (!paid) {
-                        alert('Payment was not completed. Your order remains pending.');
-                    } else {
-                        alert('Payment completed successfully!');
-                    }
-                } else {
-                    alert('Order placed successfully with Cash on Delivery!');
-                }
-
-                const storedOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-                storedOrders.unshift({ ...data.order, date: data.order.createdAt || new Date().toISOString() });
-                localStorage.setItem('userOrders', JSON.stringify(storedOrders));
-
-                localStorage.removeItem('cart');
-                window.location.href = 'order-confirmation.html?orderId=' + data.order.id;
+                finalizeOrder(data.order, '🎉 Payment successful! Your order has been placed.');
             } catch (error) {
-                alert(error.message);
+                alert('Order placement error: ' + error.message);
             }
+        }
+
+        function finalizeOrder(order, message) {
+            if (message) alert(message);
+            const storedOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+            storedOrders.unshift({ ...order, date: order.createdAt || new Date().toISOString() });
+            localStorage.setItem('userOrders', JSON.stringify(storedOrders));
+
+            localStorage.removeItem('cart');
+            window.location.href = 'order-confirmation.html?orderId=' + order.id;
         }
 
         async function applyPromo() {
