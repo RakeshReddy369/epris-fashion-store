@@ -3,7 +3,7 @@ const API_BASE_URL = (function() {
         if (window.EPRIS_API_URL) return window.EPRIS_API_URL.replace(/\/+$/, '');
         const stored = localStorage.getItem('API_URL');
         if (stored) return stored.replace(/\/+$/, '');
-        if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        if (window.location.protocol === 'file:') {
             return 'http://localhost:3000/api';
         }
         return `${window.location.origin}/api`;

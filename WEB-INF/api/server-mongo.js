@@ -1032,16 +1032,27 @@ async function start() {
     await seedProductCollection();
     await seedCoupons();
     await ensureAdminUser();
-    return new Promise((resolve) => {
-        const server = app.listen(port, () => {
-            console.log('\n======================================================');
-            console.log(`🚀 EPRIS Fashion Store (MongoDB Atlas) running at http://localhost:${port}`);
-            console.log(`   - Storefront: http://localhost:${port}/`);
-            console.log(`   - Admin:      http://localhost:${port}/admin.html`);
-            console.log(`   - API Base:   http://localhost:${port}/api`);
-            console.log('======================================================\n');
-            resolve(server);
-        });
+    return new Promise((resolve, reject) => {
+        function listenOnPort(currentPort, retries = 5) {
+            const server = app.listen(currentPort, () => {
+                console.log('\n======================================================');
+                console.log('🚀 EPRIS Fashion Store (MongoDB Atlas) running at http://localhost:' + currentPort);
+                console.log('   - Storefront: http://localhost:' + currentPort + '/');
+                console.log('   - Admin:      http://localhost:' + currentPort + '/admin.html');
+                console.log('   - API Base:   http://localhost:' + currentPort + '/api');
+                console.log('======================================================\n');
+                resolve(server);
+            });
+            server.on('error', (err) => {
+                if (err.code === 'EADDRINUSE' && retries > 0) {
+                    console.warn('⚠️ Port ' + currentPort + ' is currently in use. Automatically switching to http://localhost:' + (currentPort + 1) + '...');
+                    listenOnPort(currentPort + 1, retries - 1);
+                } else {
+                    reject(err);
+                }
+            });
+        }
+        listenOnPort(port);
     });
 }
 
