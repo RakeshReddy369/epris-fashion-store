@@ -1,15 +1,18 @@
-const API_BASE_URL = (function() {
+let currentApiBaseUrl = (function() {
     if (typeof window !== 'undefined') {
         if (window.EPRIS_API_URL) return window.EPRIS_API_URL.replace(/\/+$/, '');
         const stored = localStorage.getItem('API_URL');
         if (stored) return stored.replace(/\/+$/, '');
-        if (window.location.protocol === 'file:') {
+        // If loaded via file:// or VS Code Live Server (port 5500, 5501, 8080)
+        if (window.location.protocol === 'file:' || window.location.port === '5500' || window.location.port === '5501' || window.location.port === '8080') {
             return 'http://localhost:3000/api';
         }
         return `${window.location.origin}/api`;
     }
     return 'http://localhost:3000/api';
 })();
+
+const API_BASE_URL = currentApiBaseUrl;
 
 function getAuthToken() {
     return localStorage.getItem('authToken');
@@ -21,14 +24,37 @@ function getAuthHeaders() {
 }
 
 async function apiRequest(path, options = {}) {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...getAuthHeaders(),
-            ...(options.headers || {})
+    let response;
+    try {
+        response = await fetch(`${currentApiBaseUrl}${path}`, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders(),
+                ...(options.headers || {})
+            }
+        });
+    } catch (networkErr) {
+        // If localhost:3000 failed, automatically retry with fallback port 3001
+        if (currentApiBaseUrl.includes(':3000')) {
+            try {
+                const altUrl = currentApiBaseUrl.replace(':3000', ':3001');
+                response = await fetch(`${altUrl}${path}`, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders(),
+                        ...(options.headers || {})
+                    }
+                });
+                currentApiBaseUrl = altUrl; // Cache working URL
+            } catch (fallbackErr) {
+                throw new Error('Cannot connect to EPRIS server. Please make sure your backend server is running in terminal (npm run dev).');
+            }
+        } else {
+            throw new Error(`Cannot connect to server at ${currentApiBaseUrl}. Please ensure your backend server is running.`);
         }
-    });
+    }
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
