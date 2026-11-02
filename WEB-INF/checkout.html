@@ -330,7 +330,61 @@
         </div>
     </section>
 
+    <!-- UPI Payment QR Code Modal -->
+    <div id="eprisUpiModal" class="epris-upi-modal-overlay" style="display: none;">
+        <div class="epris-upi-modal-card">
+            <div class="epris-upi-modal-header">
+                <div class="epris-upi-badge">⚡ Instant UPI Payment</div>
+                <button type="button" class="epris-upi-close-btn" onclick="closeUpiModal()">&times;</button>
+            </div>
+            
+            <div class="epris-upi-apps-row">
+                <span class="upi-app-pill gpay">GPay</span>
+                <span class="upi-app-pill phonepe">PhonePe</span>
+                <span class="upi-app-pill paytm">Paytm</span>
+                <span class="upi-app-pill bhim">BHIM</span>
+                <span class="upi-app-pill cred">CRED</span>
+            </div>
+
+            <div class="epris-upi-body">
+                <p class="epris-upi-order-tag" id="upiOrderTag">Order #ord_...</p>
+                <div class="epris-upi-amount" id="upiModalAmount">₹0</div>
+                <p class="epris-upi-instruction">Scan with Google Pay, PhonePe, Paytm, or any UPI app</p>
+
+                <!-- QR Container -->
+                <div class="epris-upi-qr-frame">
+                    <div id="upiQrCodeContainer" class="epris-upi-qr-box"></div>
+                </div>
+
+                <!-- UPI ID & Copy -->
+                <div class="epris-upi-id-box">
+                    <span class="epris-upi-id-label">UPI ID:</span>
+                    <strong class="epris-upi-id-text" id="upiIdDisplay">epris.fashion@upi</strong>
+                    <button type="button" class="epris-upi-copy-btn" id="upiCopyBtn" onclick="copyUpiId()">📋 Copy</button>
+                </div>
+
+                <!-- Mobile Tap to Pay Button -->
+                <a id="upiIntentLink" href="#" class="epris-upi-intent-btn" style="display:none;">
+                    📱 Tap to Pay in UPI App (GPay / PhonePe)
+                </a>
+
+                <!-- UTR Input -->
+                <div class="epris-upi-utr-section">
+                    <label for="upiUtrInput" class="epris-upi-utr-label">After payment, enter 12-digit UPI UTR / Ref No. (Optional):</label>
+                    <input type="text" id="upiUtrInput" class="epris-upi-utr-input" placeholder="e.g. 412389745612" maxlength="16">
+                </div>
+            </div>
+
+            <div class="epris-upi-actions">
+                <button type="button" class="epris-upi-btn-cancel" onclick="cancelUpiPayment()">Pay Later / Cancel</button>
+                <button type="button" class="epris-upi-btn-confirm" id="upiConfirmPaidBtn" onclick="confirmUpiPayment()">✓ I Have Paid (Confirm Order)</button>
+            </div>
+        </div>
+    </div>
+
+
     <script src="api-client.js"></script>
+    <script src="invoice.js"></script>
     <script src="script.js"></script>
     <script>
         let currentStep = 1;
@@ -730,6 +784,121 @@
             }
         }
 
+        
+        let activeUpiOrder = null;
+        let upiPaymentResolve = null;
+
+        async function handleUpiPayment(order, address) {
+            activeUpiOrder = order;
+            let upiConfig = { upiId: 'epris.fashion@upi', upiName: 'EPRIS Fashion' };
+            try {
+                const configRes = await apiRequest('/payment/upi-config');
+                if (configRes && configRes.upiId) upiConfig = configRes;
+            } catch (e) {
+                console.warn('Could not fetch UPI config:', e.message);
+            }
+
+            const upiId = upiConfig.upiId || 'epris.fashion@upi';
+            const upiName = upiConfig.upiName || 'EPRIS Fashion';
+            const amount = Number(order.total || 0).toFixed(2);
+            const note = 'Order ' + order.id;
+
+            // Standard NPCI UPI URI
+            const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+
+            document.getElementById('upiOrderTag').textContent = `Order #${order.id}`;
+            document.getElementById('upiModalAmount').textContent = `₹${Number(order.total || 0).toLocaleString('en-IN')}`;
+            document.getElementById('upiIdDisplay').textContent = upiId;
+            document.getElementById('upiUtrInput').value = '';
+
+            // Render vector SVG QR Code
+            const qrContainer = document.getElementById('upiQrCodeContainer');
+            let qrRendered = false;
+
+            if (typeof EprisInvoice !== 'undefined' && typeof EprisInvoice.generateQRSVG === 'function') {
+                try {
+                    qrContainer.innerHTML = EprisInvoice.generateQRSVG(upiUri, 200);
+                    qrRendered = true;
+                } catch (err) {
+                    console.warn('Vector QR failed, falling back to image QR:', err);
+                }
+            }
+
+            if (!qrRendered) {
+                qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=2&data=${encodeURIComponent(upiUri)}" alt="UPI Payment QR Code" width="200" height="200">`;
+            }
+
+            // Mobile Deep Link
+            const intentBtn = document.getElementById('upiIntentLink');
+            if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
+                intentBtn.href = upiUri;
+                intentBtn.style.display = 'block';
+            } else {
+                intentBtn.style.display = 'none';
+            }
+
+            // Show Modal
+            document.getElementById('eprisUpiModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+
+            return new Promise((resolve) => {
+                upiPaymentResolve = resolve;
+            });
+        }
+
+        function closeUpiModal() {
+            document.getElementById('eprisUpiModal').style.display = 'none';
+            document.body.style.overflow = '';
+            if (upiPaymentResolve) {
+                upiPaymentResolve(false);
+                upiPaymentResolve = null;
+            }
+        }
+
+        function cancelUpiPayment() {
+            closeUpiModal();
+        }
+
+        async function confirmUpiPayment() {
+            if (!activeUpiOrder) return;
+            const utr = document.getElementById('upiUtrInput').value.trim();
+            const confirmBtn = document.getElementById('upiConfirmPaidBtn');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Verifying...';
+
+            try {
+                await apiRequest('/payment/upi/confirm', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        orderId: activeUpiOrder.id,
+                        utrNumber: utr
+                    })
+                });
+
+                document.getElementById('eprisUpiModal').style.display = 'none';
+                document.body.style.overflow = '';
+                if (upiPaymentResolve) {
+                    upiPaymentResolve(true);
+                    upiPaymentResolve = null;
+                }
+            } catch (err) {
+                alert('Could not verify payment: ' + err.message);
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = '✓ I Have Paid (Confirm Order)';
+            }
+        }
+
+        function copyUpiId() {
+            const upiId = document.getElementById('upiIdDisplay').textContent;
+            navigator.clipboard.writeText(upiId).then(() => {
+                const btn = document.getElementById('upiCopyBtn');
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
+            }).catch(() => {
+                prompt('Copy UPI ID:', upiId);
+            });
+        }
+
         async function placeOrder() {
             if (!document.getElementById('termsAgree').checked) {
                 alert('Please agree to Terms & Conditions');
@@ -766,7 +935,16 @@
                     body: JSON.stringify(payload)
                 });
 
-                if (selectedPayment !== 'cod') {
+                if (selectedPayment === 'upi') {
+                    const paid = await handleUpiPayment(data.order, address);
+                    if (paid) {
+                        data.order.status = 'Confirmed';
+                        data.order.payment = { type: 'upi', status: 'paid' };
+                        alert('🎉 UPI Payment received & order confirmed!');
+                    } else {
+                        alert('Order created with UPI Payment Pending. You can complete payment anytime from your Profile.');
+                    }
+                } else if (selectedPayment !== 'cod') {
                     const paid = await handleRazorpayPayment(data.order, address);
                     if (!paid) {
                         alert('Payment was not completed. Your order remains pending.');

@@ -991,6 +991,43 @@ app.post('/api/payment/verify', authenticate, async (req, res, next) => {
     }
 });
 
+
+// ---------------------------------------------------------------------------
+// Native UPI QR Payment Routes (Mongo)
+// ---------------------------------------------------------------------------
+app.get('/api/payment/upi-config', (req, res) => {
+    res.json({
+        upiId: process.env.UPI_ID || 'epris.fashion@upi',
+        upiName: process.env.UPI_NAME || 'EPRIS Fashion'
+    });
+});
+
+app.post('/api/payment/upi/confirm', authenticate, async (req, res, next) => {
+    try {
+        const { orderId, utrNumber } = req.body;
+        if (!orderId) return res.status(400).json({ message: 'orderId is required' });
+        const order = await Order.findOne({ id: orderId, userId: req.user.id });
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+
+        order.status = 'Confirmed';
+        order.payment = {
+            ...order.payment,
+            type: 'upi',
+            status: 'paid',
+            providerPaymentId: String(utrNumber || '').trim() || ('UPI_' + Date.now()),
+            paidAt: new Date().toISOString()
+        };
+        await order.save();
+
+        const user = await User.findOne({ id: req.user.id }).lean();
+        if (user) sendOrderConfirmation(user, order).catch(() => {});
+
+        res.json({ success: true, order });
+    } catch (err) {
+        next(err);
+    }
+});
+
 // ---------------------------------------------------------------------------
 // Product Reviews & Ratings (Mongo)
 // ---------------------------------------------------------------------------

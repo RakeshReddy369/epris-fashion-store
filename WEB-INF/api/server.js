@@ -1111,6 +1111,40 @@ app.post('/api/payment/verify', authenticate, async (req, res) => {
 
     res.json({ verified: true, paymentId: razorpay_payment_id });
 });
+
+// ---------------------------------------------------------------------------
+// Native UPI QR Payment Routes (JSON Store)
+// ---------------------------------------------------------------------------
+app.get('/api/payment/upi-config', (req, res) => {
+    res.json({
+        upiId: process.env.UPI_ID || 'epris.fashion@upi',
+        upiName: process.env.UPI_NAME || 'EPRIS Fashion'
+    });
+});
+
+app.post('/api/payment/upi/confirm', authenticate, (req, res) => {
+    const { orderId, utrNumber } = req.body;
+    if (!orderId) return res.status(400).json({ message: 'orderId is required' });
+    const database = readDatabase();
+    const order = database.orders.find(o => o.id === orderId && o.userId === req.userId);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    order.status = 'Confirmed';
+    order.payment = {
+        ...order.payment,
+        type: 'upi',
+        status: 'paid',
+        providerPaymentId: String(utrNumber || '').trim() || ('UPI_' + Date.now()),
+        paidAt: new Date().toISOString()
+    };
+    writeDatabase(database);
+
+    const buyer = database.users.find(u => u.id === req.userId);
+    if (buyer) sendOrderConfirmation(buyer, order).catch(() => {});
+
+    res.json({ success: true, order });
+});
+
 app.use((error, req, res, next) => {
     console.error(error);
     res.status(500).json({ message: error.message || 'Internal server error' });

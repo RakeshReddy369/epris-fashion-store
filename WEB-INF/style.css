@@ -3818,3 +3818,263 @@ footer {
         background: #fff;
     }
 }
+
+
+/* ==========================================================================
+   INSTANT UPI PAYMENT QR MODAL
+   ========================================================================== */
+.epris-upi-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(6px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: eprisUpiFadeIn 0.2s ease-out;
+}
+
+@keyframes eprisUpiFadeIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.epris-upi-modal-card {
+    background: #ffffff;
+    border-radius: 20px;
+    width: min(440px, 95vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+    padding: 24px;
+    text-align: center;
+    position: relative;
+    border: 1px solid #e2e8f0;
+}
+
+.epris-upi-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.epris-upi-badge {
+    background: #eef2ff;
+    color: #4f46e5;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.epris-upi-close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    line-height: 1;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: color 0.15s;
+}
+
+.epris-upi-close-btn:hover {
+    color: #0f172a;
+}
+
+.epris-upi-apps-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.upi-app-pill {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.3px;
+}
+
+.upi-app-pill.gpay { background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; }
+.upi-app-pill.phonepe { background: #5f259f; color: #ffffff; }
+.upi-app-pill.paytm { background: #00b9f5; color: #ffffff; }
+.upi-app-pill.bhim { background: #005a9c; color: #ffffff; }
+.upi-app-pill.cred { background: #121212; color: #ffffff; }
+
+.epris-upi-order-tag {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+    margin: 0 0 4px;
+}
+
+.epris-upi-amount {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+}
+
+.epris-upi-instruction {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 0 16px;
+}
+
+.epris-upi-qr-frame {
+    display: inline-block;
+    padding: 12px;
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    margin-bottom: 16px;
+}
+
+.epris-upi-qr-box svg,
+.epris-upi-qr-box img {
+    display: block;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+    border-radius: 8px;
+}
+
+.epris-upi-id-box {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    font-size: 13px;
+}
+
+.epris-upi-id-label {
+    color: #64748b;
+    font-weight: 600;
+}
+
+.epris-upi-id-text {
+    font-family: monospace;
+    font-size: 13px;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.epris-upi-copy-btn {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #1e293b;
+    transition: all 0.15s;
+}
+
+.epris-upi-copy-btn:hover {
+    background: #f1f5f9;
+}
+
+.epris-upi-intent-btn {
+    display: block;
+    width: 100%;
+    background: #0f172a;
+    color: #ffffff;
+    text-decoration: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+    transition: transform 0.15s;
+}
+
+.epris-upi-intent-btn:hover {
+    transform: translateY(-1px);
+}
+
+.epris-upi-utr-section {
+    text-align: left;
+    margin-bottom: 16px;
+}
+
+.epris-upi-utr-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.epris-upi-utr-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    box-sizing: border-box;
+}
+
+.epris-upi-utr-input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.epris-upi-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.epris-upi-btn-cancel {
+    flex: 1;
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.epris-upi-btn-cancel:hover {
+    background: #e2e8f0;
+}
+
+.epris-upi-btn-confirm {
+    flex: 2;
+    background: #16a34a;
+    color: #ffffff;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+    transition: background 0.15s, transform 0.15s;
+}
+
+.epris-upi-btn-confirm:hover {
+    background: #15803d;
+    transform: translateY(-1px);
+}
