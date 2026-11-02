@@ -1,6 +1,7 @@
 'use strict';
 
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // ---------------------------------------------------------------------------
 // Razorpay payment helper
@@ -29,7 +30,7 @@ function getRazorpay() {
 async function createRazorpayOrder(amountInRupees, currency = 'INR', receipt = '') {
     const rz = getRazorpay();
     if (!rz) {
-        return { simulated: true, id: `sim_${Date.now()}`, amount: amountInRupees * 100, currency };
+        throw new Error('Razorpay payment gateway is not configured or offline. Please check your credentials in .env.');
     }
     const order = await rz.orders.create({
         amount:   Math.round(amountInRupees * 100),
@@ -40,16 +41,20 @@ async function createRazorpayOrder(amountInRupees, currency = 'INR', receipt = '
     return order;
 }
 
-// Verify payment signature (call after frontend payment success callback)
+// Verify payment signature (cryptographic HMAC-SHA256 verification)
 function verifyRazorpaySignature(orderId, paymentId, signature) {
-    if (!isConfigured) return true; // skip verification in demo mode
-    const crypto = require('crypto');
-    const expected = crypto
-        .createHmac('sha256', keySecret)
-        .update(`${orderId}|${paymentId}`)
-        .digest('hex');
-    return expected === signature;
+    if (!isConfigured || !orderId || !paymentId || !signature) return false;
+    try {
+        const crypto = require('crypto');
+        const expected = crypto
+            .createHmac('sha256', keySecret)
+            .update(`${orderId}|${paymentId}`)
+            .digest('hex');
+        return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+    } catch (err) {
+        console.error('[Razorpay] Verification error:', err.message);
+        return false;
+    }
 }
 
 module.exports = { isConfigured, createRazorpayOrder, verifyRazorpaySignature, keyId };
-

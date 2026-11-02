@@ -867,6 +867,10 @@ app.post('/api/orders', authenticate, (req, res) => {
     const isPaid = payment && payment.status === 'paid';
     const isCod = payment && payment.type === 'cod';
 
+    if (!isPaid && !isCod) {
+        return res.status(400).json({ message: 'Order cannot be placed without completed payment or Cash on Delivery' });
+    }
+
     const order = {
         id: createId('ord'),
         userId: req.userId,
@@ -875,8 +879,9 @@ app.post('/api/orders', authenticate, (req, res) => {
         delivery: { type: delivery.type, cost: shipping },
         payment: {
             type: payment.type || 'cod',
-            status: isPaid ? 'paid' : (isCod ? 'pending' : (payment.status || 'pending')),
-            providerPaymentId: payment.providerPaymentId || payment.utrNumber || (isPaid ? ('UPI_' + Date.now()) : null),
+            status: isPaid ? 'paid' : 'pending',
+            providerOrderId: payment.providerOrderId || null,
+            providerPaymentId: payment.providerPaymentId || payment.utrNumber || (isPaid ? ('PAY_' + Date.now()) : null),
             paidAt: isPaid ? (payment.paidAt || new Date().toISOString()) : null
         },
         subtotal,
@@ -885,7 +890,7 @@ app.post('/api/orders', authenticate, (req, res) => {
         discount,
         couponCode: appliedCode,
         total: Math.max(0, subtotal - discount + tax + shipping),
-        status: (isPaid || isCod) ? 'Confirmed' : 'Pending',
+        status: 'Confirmed',
         createdAt: new Date().toISOString()
     };
 
