@@ -860,20 +860,59 @@ app.post('/api/orders', authenticate, async (req, res, next) => {
         const { address, delivery = { type: 'standard', cost: 100 }, payment = { type: 'cod' }, couponCode = '' } = req.body;
         const cart = await getOrCreateCart(req.user.id);
         if (!cart.items.length) return res.status(400).json({ message: 'Cannot place an order with an empty cart' });
-        if (!address || !address.name || !address.street || !address.city || !address.state || !address.zip) return res.status(400).json({ message: 'A complete shipping address is required' });
+        if (!address || !address.name || !address.street || !address.city || !address.state || !address.zip) {
+            return res.status(400).json({ message: 'A complete shipping address is required' });
+        }
 
-        const subtotal = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
+        const subtotal = cart.items.reduce((total, item) => total + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0);
         const shipping = Number(delivery.cost) || 0;
         const tax = Math.round(subtotal * 0.1);
+        let discount = 0;
+        let appliedCode = '';
+
+        if (couponCode) {
+            const cleanCode = String(couponCode).trim().toUpperCase();
+            const cp = await Coupon.findOne({ code: cleanCode, isActive: true });
+            if (cp && subtotal >= (cp.minOrderAmount || 0)) {
+                appliedCode = cp.code;
+                if (cp.discountType === 'percentage') {
+                    discount = Math.round((subtotal * cp.discountValue) / 100);
+                    if (cp.maxDiscountAmount) discount = Math.min(discount, cp.maxDiscountAmount);
+                } else if (cp.discountType === 'flat') {
+                    discount = Math.min(cp.discountValue, subtotal);
+                } else if (cp.discountType === 'shipping') {
+                    discount = Math.min(cp.discountValue, shipping);
+                }
+                await Coupon.updateOne({ _id: cp._id }, { $inc: { usedCount: 1 } });
+            }
+        }
+
+        const total = Math.max(0, subtotal - discount + tax + shipping);
         const order = await Order.create({
-            id: createId('ord'), userId: req.user.id, items: cart.items, address,
-            delivery: { type: delivery.type, cost: shipping }, payment: { type: payment.type },
-            subtotal, tax, shipping, discount,
+            id: createId('ord'),
+            userId: req.user.id,
+            items: cart.items,
+            address,
+            delivery: { type: delivery.type || 'standard', cost: shipping },
+            payment: { type: payment.type || 'cod', status: payment.status || 'pending' },
+            subtotal,
+            tax,
+            shipping,
+            discount,
             couponCode: appliedCode,
-            total: Math.max(0, subtotal - discount + tax + shipping), status: 'Pending'
+            total,
+            status: 'Pending'
         });
+
         cart.items = [];
         await cart.save();
+
+        // Send confirmation email (non-blocking)
+        const customer = await User.findOne({ id: req.user.id }).lean();
+        if (customer) {
+            sendOrderConfirmation(customer, order).catch(() => {});
+        }
+
         res.status(201).json({ order });
     } catch (error) {
         next(error);
@@ -1022,7 +1061,7 @@ app.post('/api/products/:id/reviews', async (req, res, next) => {
 
 app.use((error, req, res, next) => {
     console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: error.message || 'Internal server error' });
 });
 
 async function start() {

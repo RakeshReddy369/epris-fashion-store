@@ -1113,7 +1113,7 @@ app.post('/api/payment/verify', authenticate, async (req, res) => {
 });
 app.use((error, req, res, next) => {
     console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: error.message || 'Internal server error' });
 });
 
 if (require.main === module) {
