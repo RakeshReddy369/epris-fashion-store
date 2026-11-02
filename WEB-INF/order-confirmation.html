@@ -306,7 +306,19 @@
                 cod: '📦 Cash on Delivery'
             };
             const paymentType = typeof order.payment === 'object' ? order.payment.type : order.payment;
-            document.getElementById('confirmPayment').textContent = paymentMethods[paymentType] || paymentType;
+            let paymentText = paymentMethods[paymentType] || paymentType;
+            if (paymentType === 'upi' && order.payment && order.payment.providerPaymentId) {
+                paymentText += ' (UTR: ' + order.payment.providerPaymentId + ')';
+            }
+            document.getElementById('confirmPayment').textContent = paymentText;
+
+            // If UPI pending verification, display note
+            if (order.status === 'Payment Verification Pending') {
+                const trackCard = document.querySelector('.confirmation-card p');
+                if (trackCard) {
+                    trackCard.innerHTML = '<span style="color:#d97706; font-weight:700;">⏳ Your UPI payment (UTR: ' + (order.payment?.providerPaymentId || '') + ') is being verified by Rakesh.</span><br>' + trackCard.innerHTML;
+                }
+            }
 
             // Live order tracking state
             const currentStatus = order.status || 'Pending';

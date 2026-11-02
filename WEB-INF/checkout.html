@@ -233,27 +233,51 @@
                             </div>
                         </div>
 
-                        <!-- UPI Information Box (Shown when UPI is selected in Step 3) -->
-                        <div id="upiPaymentForm" class="payment-form" style="display: block; padding: 22px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; margin-top: 20px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <span style="background: #eef2ff; color: #4f46e5; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">⚡ Live UPI QR Code</span>
-                                <span style="font-size: 12px; color: #16a34a; font-weight: 600;">✓ Bank Verified</span>
+                        <!-- UPI Payment Box (Displaying Rakesh's Google Pay QR Code) -->
+                        <div id="upiPaymentForm" class="payment-form" style="display: block; padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; margin-top: 20px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                                <span style="background: #eef2ff; color: #4f46e5; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">⚡ Scan & Pay with Google Pay / PhonePe</span>
+                                <span style="font-size: 12px; color: #16a34a; font-weight: 600;">✓ Instant Direct Transfer</span>
                             </div>
 
                             <div style="display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; flex-wrap: wrap;">
-                                <span class="upi-app-pill gpay">GPay</span>
+                                <span class="upi-app-pill gpay">Google Pay</span>
                                 <span class="upi-app-pill phonepe">PhonePe</span>
                                 <span class="upi-app-pill paytm">Paytm</span>
                                 <span class="upi-app-pill bhim">BHIM</span>
                                 <span class="upi-app-pill cred">CRED</span>
                             </div>
 
-                            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; max-width: 420px; margin: 0 auto;">
-                                <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 6px;">Scan & Pay with Any UPI App</p>
-                                <p style="font-size: 13px; color: #64748b; margin: 0 0 10px; line-height: 1.5;">When you click <strong>Review Order</strong> and <strong>Place Order</strong>, a live, bank-verified UPI QR code will open on screen. Scan with Google Pay, PhonePe, or Paytm to complete payment.</p>
-                                <div style="display: inline-flex; align-items: center; gap: 6px; background: #f0fdf4; color: #16a34a; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px;">
-                                    🔒 Your order is confirmed ONLY AFTER payment is received
+                            <!-- Display Rakesh's Real Google Pay QR Image -->
+                            <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 16px; max-width: 320px; margin: 0 auto 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;">
+                                    <div style="width: 28px; height: 28px; border-radius: 50%; background: #16a34a; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">R</div>
+                                    <strong style="font-size: 16px; color: #0f172a;">Rakesh</strong>
                                 </div>
+                                <img src="assets/images/rakesh-upi-qr.jpg" alt="Rakesh Google Pay UPI QR Code" style="width: 240px; height: auto; max-width: 100%; border-radius: 12px; display: block; margin: 0 auto; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                            </div>
+
+                            <!-- UPI ID & Copy -->
+                            <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; max-width: 360px; margin: 0 auto 14px; font-size: 13px;">
+                                <span style="color: #64748b; font-weight: 600;">UPI ID:</span>
+                                <strong id="inlineUpiIdDisplay" style="font-family: monospace; color: #0f172a; font-size: 13px;">rakeshreddy056012-1@okaxis</strong>
+                                <button type="button" id="inlineUpiCopyBtn" onclick="copyUpiIdText('rakeshreddy056012-1@okaxis')" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">📋 Copy</button>
+                            </div>
+
+                            <!-- Mobile Deep Link Button -->
+                            <a id="inlineUpiIntentBtn" href="upi://pay?pa=rakeshreddy056012-1@okaxis&pn=Rakesh&cu=INR&tn=EPRIS%20Order" class="epris-upi-intent-btn" style="max-width: 360px; margin: 0 auto 14px; display: inline-block;">
+                                📱 Tap to Pay in Google Pay / PhonePe
+                            </a>
+
+                            <!-- 12-digit UTR Input -->
+                            <div style="max-width: 360px; margin: 0 auto 10px; text-align: left;">
+                                <label for="inlineUpiUtrInput" style="display: block; font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">
+                                    Enter 12-Digit UPI Ref / UTR No. * :
+                                </label>
+                                <input type="text" id="inlineUpiUtrInput" placeholder="e.g. 412893745612" maxlength="16" style="width: 100%; padding: 10px 12px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-weight: 600;">
+                                <small style="display: block; color: #64748b; font-size: 11px; margin-top: 4px;">
+                                    ℹ️ Find the 12-digit UPI Transaction ID / UTR in Google Pay or PhonePe after paying. Order is verified against your bank transfer.
+                                </small>
                             </div>
                         </div>
 
@@ -791,6 +815,18 @@
             });
         }
 
+        function copyUpiIdText(id) {
+            navigator.clipboard.writeText(id).then(() => {
+                const btn = document.getElementById('inlineUpiCopyBtn');
+                if (btn) {
+                    btn.textContent = '✓ Copied!';
+                    setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
+                }
+            }).catch(() => {
+                prompt('Copy UPI ID:', id);
+            });
+        }
+
         async function placeOrder() {
             if (!document.getElementById('termsAgree').checked) {
                 alert('Please agree to Terms & Conditions before proceeding.');
@@ -859,18 +895,49 @@
                 }
 
                 // -------------------------------------------------------------
-                // 2. ONLINE PAYMENT (UPI / QR Code / Cards / Net Banking)
-                // Order is ONLY placed AFTER money is paid & verified by gateway!
+                // 2. UPI PAYMENT (Rakesh's Google Pay QR Code)
+                // Customer must enter their 12-digit UTR from GPay / PhonePe
                 // -------------------------------------------------------------
-                const isUpi = (selectedPayment === 'upi');
-                const paymentResult = await launchRazorpayPayment(grandTotal, address, isUpi);
+                if (selectedPayment === 'upi') {
+                    let utr = (document.getElementById('inlineUpiUtrInput')?.value || '').trim();
+                    if (!utr || utr.length < 6) {
+                        utr = prompt('Please scan Rakesh\'s Google Pay QR code, complete payment, and enter the 12-digit UPI UTR / Transaction Reference number from your payment receipt:');
+                        if (!utr || utr.trim().length < 6) {
+                            alert('❌ Order NOT placed. A valid UPI UTR / Transaction Reference number is required to confirm your payment. You can also choose Cash on Delivery.');
+                            return;
+                        }
+                    }
+
+                    const payload = {
+                        address,
+                        delivery: selectedDelivery,
+                        payment: {
+                            type: 'upi',
+                            status: 'pending_verification',
+                            providerPaymentId: utr.trim()
+                        },
+                        couponCode: appliedCoupon ? appliedCoupon.code : ''
+                    };
+
+                    const data = await apiRequest('/orders', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+
+                    finalizeOrder(data.order, '🎉 Order received! Your UPI Payment (UTR: ' + utr.trim() + ') has been submitted for bank verification. Thank you!');
+                    return;
+                }
+
+                // -------------------------------------------------------------
+                // 3. CARD / ONLINE GATEWAY (Razorpay)
+                // -------------------------------------------------------------
+                const paymentResult = await launchRazorpayPayment(grandTotal, address, false);
 
                 if (!paymentResult || !paymentResult.paid) {
                     alert('❌ Payment was not completed. Your order has NOT been placed and your cart is saved. You can try again or select Cash on Delivery.');
                     return;
                 }
 
-                // Payment verified! Now create order on backend with PAID status
                 const payload = {
                     address,
                     delivery: selectedDelivery,

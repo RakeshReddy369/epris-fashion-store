@@ -233,13 +233,15 @@ async function loadOrders() {
                     <td>
                         <span style="text-transform:uppercase; font-size:11px; font-weight:700;">${paymentType}</span>
                         <small><span class="stock ${paymentStatus === 'paid' ? '' : 'low'}">${paymentStatus.toUpperCase()}</span></small>
+                        ${order.payment && order.payment.providerPaymentId ? `<div style="margin-top:3px;"><span style="font-size:10px; font-weight:700; background:#eef2ff; color:#4f46e5; padding:2px 6px; border-radius:4px; font-family:monospace;">UTR: ${order.payment.providerPaymentId}</span></div>` : ''}
                     </td>
                     <td>
                         <select onchange="updateOrderStatus('${order.id}', this.value)" style="font-weight:600;">
-                            ${['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded', 'Payment Failed'].map(st => `
+                            ${['Pending', 'Payment Verification Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded', 'Payment Failed'].map(st => `
                                 <option value="${st}" ${st === order.status ? 'selected' : ''}>${st}</option>
                             `).join('')}
                         </select>
+                        ${order.status === 'Payment Verification Pending' ? `<button type="button" onclick="updateOrderStatus('${order.id}', 'Confirmed')" style="display:block; margin-top:4px; width:100%; background:#16a34a; color:#fff; border:none; padding:4px 6px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;" title="Confirm payment received in Google Pay / Bank">✓ Confirm Paid</button>` : ''}
                     </td>
                     <td>
                         <button class="table-action" onclick="viewOrderDetail('${order.id}')" title="View customer order breakdown">🔍 Details</button>

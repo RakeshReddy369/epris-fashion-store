@@ -866,10 +866,18 @@ app.post('/api/orders', authenticate, (req, res) => {
 
     const isPaid = payment && payment.status === 'paid';
     const isCod = payment && payment.type === 'cod';
+    const isUpiPending = payment && payment.type === 'upi';
 
-    if (!isPaid && !isCod) {
+    if (!isPaid && !isCod && !isUpiPending) {
         return res.status(400).json({ message: 'Order cannot be placed without completed payment or Cash on Delivery' });
     }
+
+    if (isUpiPending && (!payment.providerPaymentId || String(payment.providerPaymentId).trim().length < 6)) {
+        return res.status(400).json({ message: 'Please provide a valid 12-digit UPI UTR / Reference number' });
+    }
+
+    const orderStatus = isPaid ? 'Confirmed' : (isCod ? 'Confirmed' : 'Payment Verification Pending');
+    const paymentStatus = isPaid ? 'paid' : (isCod ? 'pending' : 'pending_verification');
 
     const order = {
         id: createId('ord'),
@@ -879,7 +887,7 @@ app.post('/api/orders', authenticate, (req, res) => {
         delivery: { type: delivery.type, cost: shipping },
         payment: {
             type: payment.type || 'cod',
-            status: isPaid ? 'paid' : 'pending',
+            status: paymentStatus,
             providerOrderId: payment.providerOrderId || null,
             providerPaymentId: payment.providerPaymentId || payment.utrNumber || (isPaid ? ('PAY_' + Date.now()) : null),
             paidAt: isPaid ? (payment.paidAt || new Date().toISOString()) : null
@@ -890,7 +898,7 @@ app.post('/api/orders', authenticate, (req, res) => {
         discount,
         couponCode: appliedCode,
         total: Math.max(0, subtotal - discount + tax + shipping),
-        status: 'Confirmed',
+        status: orderStatus,
         createdAt: new Date().toISOString()
     };
 
@@ -1014,7 +1022,7 @@ app.get('/api/admin/orders', authenticate, requireAdmin, (req, res) => {
 
 app.patch('/api/admin/orders/:id/status', authenticate, requireAdmin, (req, res) => {
     const { status } = req.body;
-    const validStatuses = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded', 'Payment Failed'];
+    const validStatuses = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded', 'Payment Failed', 'Payment Verification Pending'];
     if (!status || !validStatuses.includes(status)) {
         return res.status(400).json({ message: `Status must be one of: ${validStatuses.join(', ')}` });
     }
@@ -1022,6 +1030,10 @@ app.patch('/api/admin/orders/:id/status', authenticate, requireAdmin, (req, res)
     const order = database.orders.find(o => o.id === req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
     order.status = status;
+    if (status === 'Confirmed' && order.payment) {
+        order.payment.status = 'paid';
+        order.payment.paidAt = new Date().toISOString();
+    }
     writeDatabase(database);
 
     // Send status update email (non-blocking)
@@ -1130,8 +1142,9 @@ app.post('/api/payment/verify', authenticate, async (req, res) => {
 // ---------------------------------------------------------------------------
 app.get('/api/payment/upi-config', (req, res) => {
     res.json({
-        upiId: process.env.UPI_ID || 'epris.fashion@upi',
-        upiName: process.env.UPI_NAME || 'EPRIS Fashion'
+        upiId: process.env.UPI_ID || 'rakeshreddy056012-1@okaxis',
+        upiName: process.env.UPI_NAME || 'Rakesh',
+        qrImage: process.env.UPI_QR_IMAGE || 'assets/images/rakesh-upi-qr.jpg'
     });
 });
 
