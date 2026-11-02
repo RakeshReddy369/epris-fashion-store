@@ -309,6 +309,10 @@
             let paymentText = paymentMethods[paymentType] || paymentType;
             if (paymentType === 'upi' && order.payment && order.payment.providerPaymentId) {
                 paymentText += ' (UTR: ' + order.payment.providerPaymentId + ')';
+            } else if (paymentType === 'wallet' && order.payment && order.payment.walletProvider) {
+                paymentText += ' (' + order.payment.walletProvider.toUpperCase() + ')';
+            } else if (paymentType === 'bank' && order.payment && order.payment.bankCode) {
+                paymentText += ' (' + order.payment.bankCode + ')';
             }
             document.getElementById('confirmPayment').textContent = paymentText;
 
