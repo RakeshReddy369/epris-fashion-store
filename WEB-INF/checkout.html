@@ -426,7 +426,17 @@
                             </div>
 
                             <!-- Styled Dynamic Google Pay Card -->
-                            <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 20px; padding: 20px; max-width: 330px; margin: 0 auto 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+                            <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 20px; padding: 18px; max-width: 330px; margin: 0 auto 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+                                <!-- QR View Switcher: Auto Amount vs Original Standee -->
+                                <div style="display: flex; gap: 6px; margin-bottom: 12px; background: #e2e8f0; padding: 4px; border-radius: 10px;">
+                                    <button type="button" id="qrModeDynamicBtn" onclick="switchQrView('dynamic')" style="flex: 1; padding: 7px 8px; border: none; border-radius: 7px; font-size: 11px; font-weight: 700; background: #ffffff; color: #0f172a; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                        ⚡ Auto Amount QR
+                                    </button>
+                                    <button type="button" id="qrModeStaticBtn" onclick="switchQrView('static')" style="flex: 1; padding: 7px 8px; border: none; border-radius: 7px; font-size: 11px; font-weight: 700; background: transparent; color: #64748b; cursor: pointer; transition: all 0.2s;">
+                                        📷 Original Standee
+                                    </button>
+                                </div>
+
                                 <!-- Payee Header -->
                                 <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
                                     <div style="width: 32px; height: 32px; border-radius: 50%; background: #16a34a; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px;">R</div>
@@ -440,20 +450,25 @@
                                     <div id="dynamicUpiItemSummary" style="font-size: 11px; color: #16a34a; font-weight: 600;">Pre-filled in your UPI app upon scan</div>
                                 </div>
 
-                                <!-- Dynamic Vector QR Code Container -->
-                                <div style="position: relative; width: 226px; height: 226px; margin: 0 auto; background: #ffffff; padding: 6px; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; box-sizing: border-box;">
+                                <!-- 1. Dynamic Vector QR Code View -->
+                                <div id="upiDynamicQrBox" style="position: relative; width: 226px; height: 226px; margin: 0 auto; background: #ffffff; padding: 6px; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; box-sizing: border-box;">
                                     <div id="dynamicUpiQrWrapper" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
                                         <!-- Dynamic QR SVG will be rendered here -->
                                     </div>
-                                    <!-- Center Google Pay / UPI Icon Overlay -->
-                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 38px; height: 38px; background: #ffffff; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.18); display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 2;">
-                                        <svg width="22" height="22" viewBox="0 0 48 48">
+                                    <!-- Center Google Pay Badge -->
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 34px; height: 34px; background: #ffffff; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.18); display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 2;">
+                                        <svg width="20" height="20" viewBox="0 0 48 48">
                                             <path fill="#4285F4" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.2 6.1 29.4 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.7-.4-3.9z"/>
                                             <path fill="#34A853" d="M6.3 14.7l6.6 4.8C14.7 16.1 19 13.6 24 13.6c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.2 7.7 29.4 5.6 24 5.6c-7.3 0-13.6 4.2-17.7 9.1z"/>
                                             <path fill="#FBBC05" d="M24 44c5.3 0 10.1-2.1 13.7-5.5l-6.3-5.2c-2.1 1.4-4.6 2.3-7.4 2.3-5.3 0-9.7-3.3-11.3-8l-6.6 5.1C10.2 39.6 16.6 44 24 44z"/>
                                             <path fill="#EA4335" d="M43.6 20.1H42V20H24v8h11.3c-.9 2.5-2.5 4.6-4.6 6l6.3 5.2C40.6 35.8 44 30.3 44 24c0-1.3-.1-2.7-.4-3.9z"/>
                                         </svg>
                                     </div>
+                                </div>
+
+                                <!-- 2. Static Standee QR View (Rakesh's original Google Pay QR) -->
+                                <div id="upiStaticQrBox" style="display: none; width: 226px; height: 226px; margin: 0 auto; background: #ffffff; padding: 6px; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); align-items: center; justify-content: center; box-sizing: border-box; overflow: hidden;">
+                                    <img src="assets/images/rakesh-upi-qr.jpg" alt="Rakesh Google Pay Standee QR" style="width: 100%; height: 100%; object-fit: contain; border-radius: 10px; display: block;">
                                 </div>
 
                                 <!-- UPI ID Footer -->
@@ -583,6 +598,7 @@
 
 
     <script src="api-client.js"></script>
+    <script src="qrcode.min.js"></script>
     <script src="invoice.js"></script>
     <script src="script.js"></script>
     <script>
@@ -810,6 +826,45 @@
             };
         }
 
+
+        let currentQrView = 'dynamic';
+        function switchQrView(view) {
+            currentQrView = view;
+            const dynBox = document.getElementById('upiDynamicQrBox');
+            const staBox = document.getElementById('upiStaticQrBox');
+            const dynBtn = document.getElementById('qrModeDynamicBtn');
+            const staBtn = document.getElementById('qrModeStaticBtn');
+
+            if (view === 'dynamic') {
+                if (dynBox) dynBox.style.display = 'flex';
+                if (staBox) staBox.style.display = 'none';
+                if (dynBtn) {
+                    dynBtn.style.background = '#ffffff';
+                    dynBtn.style.color = '#0f172a';
+                    dynBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                }
+                if (staBtn) {
+                    staBtn.style.background = 'transparent';
+                    staBtn.style.color = '#64748b';
+                    staBtn.style.boxShadow = 'none';
+                }
+                renderInlineUpiQR();
+            } else {
+                if (dynBox) dynBox.style.display = 'none';
+                if (staBox) staBox.style.display = 'flex';
+                if (staBtn) {
+                    staBtn.style.background = '#ffffff';
+                    staBtn.style.color = '#0f172a';
+                    staBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                }
+                if (dynBtn) {
+                    dynBtn.style.background = 'transparent';
+                    dynBtn.style.color = '#64748b';
+                    dynBtn.style.boxShadow = 'none';
+                }
+            }
+        }
+
         function renderInlineUpiQR() {
             const qrWrapper = document.getElementById('dynamicUpiQrWrapper');
             const amountDisplay = document.getElementById('dynamicUpiAmountDisplay');
@@ -828,11 +883,13 @@
                 itemSummary.textContent = `${totals.itemDescription} • Auto-filled in Google Pay / PhonePe`;
             }
 
-            // Build dynamic UPI Deep Link URI with the exact amount
+            // Build dynamic UPI Deep Link URI with the exact amount and Rakesh's Google Pay aid parameter
             const upiId = 'rakeshreddy056012-1@okaxis';
             const upiName = 'Rakesh';
+            const aid = 'uGICAgKCg7MbVOw';
             const note = 'EPRIS Order';
-            const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(note)}`;
+            // Note: Standard UPI QR spec requires literal '@' in pa. 'aid' routes directly in Google Pay.
+            const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&aid=${aid}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(note)}`;
 
             // Update mobile deep link button
             if (intentBtn) {
@@ -840,11 +897,12 @@
                 intentBtn.innerHTML = `📱 Tap to Pay ₹${totals.total.toLocaleString('en-IN')} in Google Pay / PhonePe`;
             }
 
-            // Generate Dynamic QR Code
+            // Generate Dynamic QR Code using standard QRCode library with High Error Correction
             try {
-                if (window.EprisInvoice && typeof window.EprisInvoice.generateQRSVG === 'function') {
-                    const svgHtml = window.EprisInvoice.generateQRSVG(upiUri, 214);
-                    qrWrapper.innerHTML = svgHtml;
+                if (window.QRCode && typeof window.QRCode.generateSVG === 'function') {
+                    qrWrapper.innerHTML = window.QRCode.generateSVG(upiUri, { width: 214, margin: 2, errorCorrectionLevel: 'H' });
+                } else if (window.EprisInvoice && typeof window.EprisInvoice.generateQRSVG === 'function') {
+                    qrWrapper.innerHTML = window.EprisInvoice.generateQRSVG(upiUri, 214);
                 } else {
                     qrWrapper.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=214x214&margin=2&data=${encodeURIComponent(upiUri)}" alt="UPI QR Code for ₹${formattedAmount}" style="width:214px;height:214px;border-radius:8px;display:block;">`;
                 }
@@ -853,7 +911,7 @@
                 qrWrapper.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=214x214&margin=2&data=${encodeURIComponent(upiUri)}" alt="UPI QR Code for ₹${formattedAmount}" style="width:214px;height:214px;border-radius:8px;display:block;">`;
             }
 
-            // Sync wallet and bank QR codes if those forms are active
+            // Sync wallet QR code if that form is active
             renderWalletQR();
         }
 
@@ -869,8 +927,9 @@
 
             const upiId = 'rakeshreddy056012-1@okaxis';
             const upiName = 'Rakesh';
+            const aid = 'uGICAgKCg7MbVOw';
             const note = 'EPRIS ' + (selectedWalletProvider || 'WALLET').toUpperCase();
-            const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(note)}`;
+            const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&aid=${aid}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(note)}`;
 
             if (intentBtn) {
                 intentBtn.href = upiUri;
@@ -878,7 +937,9 @@
             }
 
             try {
-                if (window.EprisInvoice && typeof window.EprisInvoice.generateQRSVG === 'function') {
+                if (window.QRCode && typeof window.QRCode.generateSVG === 'function') {
+                    qrWrapper.innerHTML = window.QRCode.generateSVG(upiUri, { width: 190, margin: 2, errorCorrectionLevel: 'H' });
+                } else if (window.EprisInvoice && typeof window.EprisInvoice.generateQRSVG === 'function') {
                     qrWrapper.innerHTML = window.EprisInvoice.generateQRSVG(upiUri, 190);
                 } else {
                     qrWrapper.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&margin=2&data=${encodeURIComponent(upiUri)}" alt="Wallet QR" style="width:190px;height:190px;border-radius:8px;display:block;">`;

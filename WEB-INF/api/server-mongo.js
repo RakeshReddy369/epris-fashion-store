@@ -1083,6 +1083,7 @@ app.get('/api/payment/upi-config', (req, res) => {
     res.json({
         upiId: process.env.UPI_ID || 'rakeshreddy056012-1@okaxis',
         upiName: process.env.UPI_NAME || 'Rakesh',
+        upiAid: process.env.UPI_AID || 'uGICAgKCg7MbVOw',
         qrImage: process.env.UPI_QR_IMAGE || 'assets/images/rakesh-upi-qr.jpg'
     });
 });

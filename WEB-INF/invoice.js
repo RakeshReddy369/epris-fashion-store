@@ -233,6 +233,16 @@
     }
 
     function generateQRSVG(text, size = 110) {
+        if (typeof window !== 'undefined' && window.QRCode && typeof window.QRCode.generateSVG === 'function') {
+            return window.QRCode.generateSVG(text, { width: size, margin: 2, errorCorrectionLevel: 'M' });
+        }
+        if (typeof QRCode !== 'undefined' && typeof QRCode.generateSVG === 'function') {
+            return QRCode.generateSVG(text, { width: size, margin: 2, errorCorrectionLevel: 'M' });
+        }
+        if (typeof globalThis !== 'undefined' && globalThis.QRCode && typeof globalThis.QRCode.generateSVG === 'function') {
+            return globalThis.QRCode.generateSVG(text, { width: size, margin: 2, errorCorrectionLevel: 'M' });
+        }
+
         const margin = 2;
         const fg = '#0f172a';
         const bg = '#ffffff';
