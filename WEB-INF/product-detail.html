@@ -473,6 +473,54 @@
     <script src="api/products.js"></script>
     <script src="script.js"></script>
     <script>
+        function escapeHTML(str) {
+            if (str == null) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        const COLOR_MAP = {
+            'black': '#111827',
+            'white': '#ffffff',
+            'blue': '#2563eb',
+            'navy': '#1e3a8a',
+            'navy blue': '#1e3a8a',
+            'sky blue': '#38bdf8',
+            'red': '#dc2626',
+            'maroon': '#800000',
+            'burgundy': '#800020',
+            'crimson': '#991b1b',
+            'green': '#16a34a',
+            'dark green': '#14532d',
+            'olive': '#556b2f',
+            'gray': '#6b7280',
+            'grey': '#6b7280',
+            'dark gray': '#374151',
+            'yellow': '#eab308',
+            'pink': '#ec4899',
+            'purple': '#9333ea',
+            'lavender': '#c084fc',
+            'orange': '#f97316',
+            'beige': '#d4b996',
+            'brown': '#78350f',
+            'tan': '#d2b48c',
+            'cream': '#fef3c7',
+            'teal': '#0d9488',
+            'gold': '#d97706',
+            'silver': '#9ca3af'
+        };
+
+        function getColorHex(colorName) {
+            if (!colorName) return '#111827';
+            const clean = String(colorName).trim().toLowerCase();
+            if (clean.startsWith('#') || clean.startsWith('rgb')) return clean;
+            return COLOR_MAP[clean] || '#6b7280';
+        }
+
         let selectedColor = 'Black';
         let selectedSize = 'M';
         let selectedQuantity = 1;
@@ -505,78 +553,230 @@
             return `₹${Number(price).toLocaleString('en-IN')}`;
         }
 
-        function loadProductDetails() {
-            const catalog = window.EPRISProductCatalog || [];
-            const productId = Number(getProductIdFromURL());
-            const product = catalog.find(item => item.id === productId) || catalog[0];
+        async function loadProductDetails() {
+            const rawId = getProductIdFromURL();
+            const numericId = Number(rawId);
+            let product = null;
+            let fullCatalog = Array.isArray(window.EPRISProductCatalog) ? [...window.EPRISProductCatalog] : [];
+
+            // 1. Fetch live product details from the backend API
+            try {
+                if (typeof apiRequest === 'function') {
+                    const res = await apiRequest('/products/' + rawId);
+                    if (res && res.product) {
+                        product = res.product;
+                    }
+                }
+            } catch (err) {
+                console.warn('Live API product fetch failed for ID ' + rawId + ':', err.message);
+            }
+
+            // 2. Refresh full catalog asynchronously so related products and navigation are up-to-date
+            try {
+                if (typeof apiRequest === 'function') {
+                    const allRes = await apiRequest('/products');
+                    if (allRes && Array.isArray(allRes.products) && allRes.products.length) {
+                        fullCatalog = allRes.products;
+                        window.EPRISProductCatalog = allRes.products;
+                    }
+                }
+            } catch (err) {
+                console.warn('Catalog refresh skipped:', err.message);
+            }
+
+            // 3. Fallback to catalog if live single product was not retrieved
+            if (!product) {
+                product = fullCatalog.find(item => String(item.id) === String(rawId) || Number(item.id) === numericId);
+            }
+
+            // 4. Fallback by search param if present
+            if (!product) {
+                const searchParam = new URLSearchParams(window.location.search).get('search');
+                if (searchParam) {
+                    const q = searchParam.toLowerCase();
+                    product = fullCatalog.find(item =>
+                        (item.name && item.name.toLowerCase().includes(q)) ||
+                        (item.category && item.category.toLowerCase().includes(q))
+                    );
+                }
+            }
+
+            // 5. Ultimate fallback if ID truly not found
+            if (!product) {
+                product = fullCatalog[0];
+            }
+
             if (!product) return;
 
             currentProductData = product;
 
             document.title = `${product.name} | EPRIS Fashion Store`;
-            document.getElementById('productName').textContent = product.name;
-            document.getElementById('productTitle').textContent = product.name;
-            document.getElementById('breadcrumbCategory').textContent = product.category;
-            document.getElementById('productCategory').textContent = product.category;
-            document.getElementById('productDetailsName').textContent = product.name;
-            document.getElementById('productAvailability').textContent = product.inventory > 0
-                ? `${product.inventory} available`
-                : 'Currently unavailable';
-            document.getElementById('currentPrice').textContent = formatProductPrice(product.price);
-            document.getElementById('originalPrice').textContent = formatProductPrice(product.originalPrice);
-            document.getElementById('productDescription').textContent = product.description;
-            document.getElementById('mainImage').src = product.image;
-            document.getElementById('mainImage').alt = product.name;
+            const nameEl = document.getElementById('productName');
+            if (nameEl) nameEl.textContent = product.name;
+            const titleEl = document.getElementById('productTitle');
+            if (titleEl) titleEl.textContent = product.name;
+            const breadcrumbEl = document.getElementById('breadcrumbCategory');
+            if (breadcrumbEl) breadcrumbEl.textContent = product.category;
+            const catEl = document.getElementById('productCategory');
+            if (catEl) catEl.textContent = product.category;
+            const detailsNameEl = document.getElementById('productDetailsName');
+            if (detailsNameEl) detailsNameEl.textContent = product.name;
+
+            const availEl = document.getElementById('productAvailability');
+            if (availEl) {
+                const qty = Number(product.inventory ?? 10);
+                availEl.textContent = qty > 0 ? `${qty} in stock (Ready to dispatch)` : 'Currently out of stock';
+                availEl.style.color = qty > 0 ? '#16a34a' : '#dc2626';
+            }
+
+            const curPriceEl = document.getElementById('currentPrice');
+            if (curPriceEl) curPriceEl.textContent = formatProductPrice(product.price);
+            const origPriceEl = document.getElementById('originalPrice');
+            if (origPriceEl) origPriceEl.textContent = formatProductPrice(product.originalPrice || product.price);
+
+            const descEl = document.getElementById('productDescription');
+            if (descEl) descEl.textContent = product.description || 'Premium quality apparel designed for maximum style and comfort.';
+
+            const mainImg = document.getElementById('mainImage');
+            if (mainImg) {
+                mainImg.src = product.image;
+                mainImg.alt = product.name;
+            }
 
             const fitNoteEl = document.getElementById('productFitNote');
             if (fitNoteEl) {
                 fitNoteEl.textContent = product.fitNote || 'Regular fit. Model is wearing size M.';
             }
 
-            const discount = product.originalPrice > 0
-                ? Math.round((1 - product.price / product.originalPrice) * 100)
+            const original = Number(product.originalPrice || product.price);
+            const current = Number(product.price);
+            const discount = (original > current && original > 0)
+                ? Math.round((1 - current / original) * 100)
                 : 0;
-            document.getElementById('discount').textContent = `${discount}% OFF`;
+            const discountEl = document.getElementById('discount');
+            if (discountEl) {
+                discountEl.textContent = discount > 0 ? `${discount}% OFF` : 'Best Value';
+            }
 
+            // Render thumbnails
+            const images = Array.isArray(product.images) && product.images.length ? product.images : [product.image];
             const thumbnails = document.querySelector('.thumbnail-images');
-            thumbnails.style.gridTemplateColumns = 'repeat(auto-fill, minmax(76px, 100px))';
-            thumbnails.innerHTML = `
-                <button class="thumbnail-button active" type="button" aria-label="Show ${product.name}" onclick="changeImage(this)">
-                    <img class="thumbnail active" src="${product.image}" alt="">
-                </button>
-            `;
+            if (thumbnails) {
+                thumbnails.style.gridTemplateColumns = 'repeat(auto-fill, minmax(76px, 100px))';
+                thumbnails.innerHTML = images.map((imgSrc, idx) => `
+                    <button class="thumbnail-button ${idx === 0 ? 'active' : ''}" type="button" aria-label="Show ${escapeHTML(product.name)}" onclick="changeImage(this)">
+                        <img class="thumbnail ${idx === 0 ? 'active' : ''}" src="${escapeHTML(imgSrc)}" alt="${escapeHTML(product.name)}">
+                    </button>
+                `).join('');
+            }
 
-            const relatedProducts = catalog
-                .filter(item => item.id !== product.id && item.category === product.category)
-                .concat(catalog.filter(item => item.id !== product.id && item.category !== product.category))
-                .slice(0, 4);
-            document.querySelector('.related-products-grid').innerHTML = relatedProducts.map(item => `
-                <div class="related-product-card">
-                    <img src="${item.image}" alt="${item.name}" loading="lazy">
-                    <h4>${item.name}</h4>
-                    <p class="price">${formatProductPrice(item.price)} <span class="original">${formatProductPrice(item.originalPrice)}</span></p>
-                    <button onclick="window.location.href='product-detail.html?id=${item.id}'">View Details</button>
-                </div>
-            `).join('');
+            // Dynamic Colors
+            let colors = product.colors;
+            if (typeof colors === 'string') {
+                colors = colors.split(',').map(c => c.trim()).filter(Boolean);
+            }
+            if (!Array.isArray(colors) || colors.length === 0) {
+                colors = ['Black', 'White'];
+            }
+            const colorContainer = document.querySelector('.color-options');
+            if (colorContainer) {
+                colorContainer.innerHTML = colors.map((col, idx) => {
+                    const hex = getColorHex(col);
+                    const isWhite = hex.toLowerCase() === '#fff' || hex.toLowerCase() === '#ffffff' || col.toLowerCase() === 'white';
+                    const borderStyle = isWhite ? 'border: 2px solid #ddd;' : '';
+                    const activeClass = idx === 0 ? 'active' : '';
+                    return `<button class="color-btn ${activeClass}" style="background-color: ${escapeHTML(hex)}; ${borderStyle}" onclick="selectColor(this, '${escapeHTML(col)}')" title="${escapeHTML(col)}"></button>`;
+                }).join(' ');
+                selectedColor = colors[0];
+                const selColorEl = document.getElementById('selectedColor');
+                if (selColorEl) selColorEl.textContent = selectedColor;
+            }
 
-            document.getElementById('wishlistBtn').classList.toggle(
-                'in-wishlist',
-                (JSON.parse(localStorage.getItem('wishlist') || '[]'))
-                    .some(item => String(item.id) === String(product.id))
-            );
+            // Dynamic Sizes
+            let sizes = product.sizes;
+            if (typeof sizes === 'string') {
+                sizes = sizes.split(',').map(s => s.trim()).filter(Boolean);
+            }
+            if (!Array.isArray(sizes) || sizes.length === 0) {
+                sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+            }
+            const sizeContainer = document.querySelector('.size-options');
+            if (sizeContainer) {
+                const activeIdx = sizes.includes('M') ? sizes.indexOf('M') : 0;
+                sizeContainer.innerHTML = sizes.map((sz, idx) => {
+                    const activeClass = idx === activeIdx ? 'active' : '';
+                    return `<button class="size-btn ${activeClass}" onclick="selectSize(this, '${escapeHTML(sz)}')">${escapeHTML(sz)}</button>`;
+                }).join(' ');
+                selectedSize = sizes[activeIdx];
+                const selSizeEl = document.getElementById('selectedSize');
+                if (selSizeEl) selSizeEl.textContent = selectedSize;
+            }
+
+            // Dynamic Virtual Trial color and size options
+            const trialColorContainer = document.getElementById('trialColorOptions');
+            if (trialColorContainer) {
+                trialColorContainer.innerHTML = colors.map((col, idx) => {
+                    const hex = getColorHex(col);
+                    const isWhite = hex.toLowerCase() === '#fff' || hex.toLowerCase() === '#ffffff' || col.toLowerCase() === 'white';
+                    const borderStyle = isWhite ? 'border: 1px solid #ccc;' : '';
+                    const activeClass = idx === 0 ? 'active' : '';
+                    return `<button type="button" class="trial-color-swatch ${activeClass}" style="background-color: ${escapeHTML(hex)}; ${borderStyle}" onclick="selectTrialColor('${escapeHTML(col)}', '${escapeHTML(hex)}')" title="${escapeHTML(col)}"></button>`;
+                }).join(' ');
+            }
+            const trialSizeContainer = document.getElementById('trialSizeOptions');
+            if (trialSizeContainer) {
+                const activeIdx = sizes.includes('M') ? sizes.indexOf('M') : 0;
+                trialSizeContainer.innerHTML = sizes.map((sz, idx) => {
+                    const activeClass = idx === activeIdx ? 'active' : '';
+                    return `<button type="button" class="trial-size-chip ${activeClass}" onclick="selectTrialSize('${escapeHTML(sz)}')">${escapeHTML(sz)}</button>`;
+                }).join(' ');
+            }
+
+            // Related Products
+            const relatedContainer = document.querySelector('.related-products-grid');
+            if (relatedContainer) {
+                const relatedProducts = fullCatalog
+                    .filter(item => String(item.id) !== String(product.id) && item.category === product.category)
+                    .concat(fullCatalog.filter(item => String(item.id) !== String(product.id) && item.category !== product.category))
+                    .slice(0, 4);
+                if (relatedProducts.length > 0) {
+                    relatedContainer.innerHTML = relatedProducts.map(item => `
+                        <div class="related-product-card">
+                            <img src="${escapeHTML(item.image)}" alt="${escapeHTML(item.name)}" loading="lazy">
+                            <h4>${escapeHTML(item.name)}</h4>
+                            <p class="price">${formatProductPrice(item.price)} <span class="original">${formatProductPrice(item.originalPrice || item.price)}</span></p>
+                            <button onclick="window.location.href='product-detail.html?id=${item.id}'">View Details</button>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            // Wishlist indicator
+            const wishlistBtn = document.getElementById('wishlistBtn');
+            if (wishlistBtn) {
+                const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+                wishlistBtn.classList.toggle(
+                    'in-wishlist',
+                    wishlist.some(item => String(item.id) === String(product.id))
+                );
+            }
 
             // Sync virtual trial modal defaults
-            document.getElementById('trialProductName').textContent = product.name;
-            document.getElementById('trialPriceDisplay').textContent = formatProductPrice(product.price);
-            document.getElementById('trialGarmentImg').src = product.image;
+            const trialProdName = document.getElementById('trialProductName');
+            if (trialProdName) trialProdName.textContent = product.name;
+            const trialPrice = document.getElementById('trialPriceDisplay');
+            if (trialPrice) trialPrice.textContent = formatProductPrice(product.price);
+            const trialImg = document.getElementById('trialGarmentImg');
+            if (trialImg) trialImg.src = product.image;
 
-            // Default model selection matching category
             if (product.category === 'Women') {
                 selectedModelId = 'w1';
             } else {
                 selectedModelId = 'm1';
             }
-            renderPresetModels();
+            if (typeof renderPresetModels === 'function') {
+                renderPresetModels();
+            }
         }
 
         // Change main image
@@ -624,16 +824,16 @@
             selectedQuantity = parseInt(qty.value);
         }
 
-        // Add to cart
+        // Add to cart & Instant Buy
         function buyNowWithUpi() {
             const product = {
-                id: getProductIdFromURL(),
-                name: document.getElementById('productName').textContent,
-                price: Number(document.getElementById('currentPrice').textContent.replace(/[₹,]/g, '')),
+                id: currentProductData ? currentProductData.id : getProductIdFromURL(),
+                name: currentProductData ? currentProductData.name : document.getElementById('productName').textContent,
+                price: currentProductData ? Number(currentProductData.price) : Number(document.getElementById('currentPrice').textContent.replace(/[₹,]/g, '')),
                 color: selectedColor,
                 size: selectedSize,
                 quantity: parseInt(document.getElementById('quantity').value, 10),
-                image: document.getElementById('mainImage').src
+                image: currentProductData ? currentProductData.image : document.getElementById('mainImage').src
             };
 
             // Set cart to only this single selected item for instant dynamic QR checkout
@@ -644,17 +844,17 @@
 
         function addProductToCart() {
             const product = {
-                id: getProductIdFromURL(),
-                name: document.getElementById('productName').textContent,
-                price: Number(document.getElementById('currentPrice').textContent.replace(/[₹,]/g, '')),
+                id: currentProductData ? currentProductData.id : getProductIdFromURL(),
+                name: currentProductData ? currentProductData.name : document.getElementById('productName').textContent,
+                price: currentProductData ? Number(currentProductData.price) : Number(document.getElementById('currentPrice').textContent.replace(/[₹,]/g, '')),
                 color: selectedColor,
                 size: selectedSize,
                 quantity: parseInt(document.getElementById('quantity').value, 10),
-                image: document.getElementById('mainImage').src
+                image: currentProductData ? currentProductData.image : document.getElementById('mainImage').src
             };
 
             let cart = JSON.parse(localStorage.getItem('cart')) || [];
-            const existingItem = cart.find(item => item.id === product.id && item.color === product.color && item.size === product.size);
+            const existingItem = cart.find(item => String(item.id) === String(product.id) && item.color === product.color && item.size === product.size);
 
             if (existingItem) {
                 existingItem.quantity += product.quantity;
@@ -674,16 +874,15 @@
         // Add to wishlist
         async function addToWishlist() {
             const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
-            const productId = getProductIdFromURL();
-            const catalogProduct = (window.EPRISProductCatalog || []).find(item => String(item.id) === String(productId));
+            const prodId = currentProductData ? currentProductData.id : getProductIdFromURL();
             const product = {
-                id: Number(productId),
-                name: document.getElementById('productName').textContent,
-                price: document.getElementById('currentPrice').textContent,
-                image: catalogProduct?.image || document.getElementById('mainImage').src
+                id: Number(prodId),
+                name: currentProductData ? currentProductData.name : document.getElementById('productName').textContent,
+                price: currentProductData ? formatProductPrice(currentProductData.price) : document.getElementById('currentPrice').textContent,
+                image: currentProductData ? currentProductData.image : document.getElementById('mainImage').src
             };
 
-            const exists = wishlist.find(item => Number(item.id) === Number(product.id));
+            const exists = wishlist.find(item => String(item.id) === String(product.id));
             if (!exists) {
                 wishlist.push(product);
                 localStorage.setItem('wishlist', JSON.stringify(wishlist));
@@ -701,7 +900,8 @@
                 } else {
                     alert('Added to wishlist!');
                 }
-                document.getElementById('wishlistBtn').classList.add('in-wishlist');
+                const btn = document.getElementById('wishlistBtn');
+                if (btn) btn.classList.add('in-wishlist');
             } else {
                 if (typeof showToast === 'function') {
                     showToast('Already in wishlist!', 'info');
@@ -1014,9 +1214,11 @@
             });
         }
 
-        // Initial catalog load
-        loadProductDetails();
-        loadProductReviews();
+        // Initial catalog & reviews load
+        (async function initProductPage() {
+            await loadProductDetails();
+            await loadProductReviews();
+        })();
 
         async function loadProductReviews() {
             const productId = getProductIdFromURL();
