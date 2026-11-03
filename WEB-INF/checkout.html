@@ -205,14 +205,6 @@
                                 </div>
                             </div>
 
-                            <div class="payment-option" onclick="selectPayment(this, 'bank')">
-                                <input type="radio" name="payment" value="bank" onchange="selectPayment(this.closest('.payment-option'), 'bank')">
-                                <div class="option-content">
-                                    <h3>🏦 Net Banking</h3>
-                                    <p>Direct Bank Transfer</p>
-                                </div>
-                            </div>
-
                             <div class="payment-option" onclick="selectPayment(this, 'cod')">
                                 <input type="radio" name="payment" value="cod" onchange="selectPayment(this.closest('.payment-option'), 'cod')">
                                 <div class="option-content">
@@ -387,139 +379,7 @@
                             </div>
                         </div>
 
-                        <!-- 3. Net Banking Form -->
-                        <div id="bankPaymentForm" class="payment-form" style="display: none; padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 16px; font-weight: 700; color: #0f172a;">🏦 Net Banking</span>
-                                    <span style="background: #f0fdf4; color: #16a34a; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px;">DIRECT BANK TRANSFER</span>
-                                </div>
-                                <span style="font-size: 12px; color: #64748b;">50+ Supported Banks</span>
-                            </div>
-
-                            <!-- Mode Selector -->
-                            <div style="display: flex; gap: 10px; max-width: 460px; margin: 0 auto 16px;">
-                                <button type="button" id="bankModeDirectBtn" onclick="switchBankMode('direct')" style="flex: 1; padding: 10px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; border: 2px solid #4f46e5; background: #eef2ff; color: #4338ca; transition: all 0.2s;">
-                                    🏛️ Direct Bank Transfer / UPI
-                                </button>
-                                <button type="button" id="bankModeGatewayBtn" onclick="switchBankMode('gateway')" style="flex: 1; padding: 10px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; border: 2px solid #cbd5e1; background: #ffffff; color: #475569; transition: all 0.2s;">
-                                    🌐 50+ Banks Online Net Banking
-                                </button>
-                            </div>
-
-                            <!-- Mode A: Direct Bank Transfer Box -->
-                            <div id="bankDirectSection" style="max-width: 380px; margin: 0 auto; text-align: center;">
-                                <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 16px; margin-bottom: 14px; text-align: left;">
-                                    <div style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                                        <span>Beneficiary Details</span>
-                                        <span id="bankAmountDisplay" style="font-size: 18px; font-weight: 800; color: #16a34a;">₹0</span>
-                                    </div>
-                                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.6; color: #334155;">
-                                        <div>Account Beneficiary: <strong>Rakesh Reddy</strong></div>
-                                        <div>UPI ID / VPA: <strong style="font-family: monospace; color: #0f172a;">rakeshreddy056012-1@okaxis</strong></div>
-                                        <div>Payment Note: <strong>EPRIS Fashion Order</strong></div>
-                                    </div>
-                                    <div id="bankQrWrapper" style="width: 180px; height: 180px; margin: 12px auto 6px; background: #fff; padding: 6px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: center;"></div>
-                                    <div style="text-align: center; font-size: 11px; color: #64748b;">Scan with any banking app (HDFC, SBI, ICICI, etc.)</div>
-                                </div>
-
-                                <a id="bankIntentBtn" href="#" class="epris-upi-intent-btn" style="max-width: 380px; margin: 0 auto 12px; display: block; text-decoration: none;">
-                                    📱 Tap to Pay via Bank UPI / Net Banking
-                                </a>
-
-                                <!-- 12-digit UTR Input for Bank -->
-                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; text-align: left; box-sizing: border-box;">
-                                    <label for="bankUtrInput" style="display: block; font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
-                                        Step 2: Enter 12-Digit Bank Reference / UTR Number *
-                                    </label>
-                                    <input type="text" id="bankUtrInput" placeholder="e.g. 412893745612" maxlength="16" style="width: 100%; padding: 10px 12px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 600; box-sizing: border-box;">
-                                    <small style="display: block; color: #64748b; font-size: 11px; margin-top: 6px; line-height: 1.4;">
-                                        ℹ️ Enter the 12-digit UTR / IMPS / NEFT transaction reference from your bank receipt. Your order is confirmed after Rakesh confirms receipt in bank.
-                                    </small>
-                                </div>
-                            </div>
-
-                            <!-- Mode B: Online Gateway Box -->
-                            <div id="bankGatewaySection" style="display: none; max-width: 460px; margin: 0 auto; text-align: left;">
-                                <p style="font-size: 13px; color: #64748b; margin-bottom: 12px; text-align: left;">
-                                    Select your bank for online authentication:
-                                </p>
-
-                                <!-- Popular Banks Grid -->
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 0 auto 16px;">
-                                    <label class="bank-select-card selected" style="border: 2px solid #4f46e5; background: #eef2ff; border-radius: 12px; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer; text-align: center; transition: all 0.2s;">
-                                        <input type="radio" name="selectedBank" value="HDFC" checked style="display: none;" onchange="updateBankSelection(this)">
-                                        <span style="font-size: 20px; margin-bottom: 4px;">🏛️</span>
-                                        <strong style="font-size: 13px; color: #0f172a;">HDFC Bank</strong>
-                                    </label>
-
-                                    <label class="bank-select-card" style="border: 2px solid #cbd5e1; background: #ffffff; border-radius: 12px; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer; text-align: center; transition: all 0.2s;">
-                                        <input type="radio" name="selectedBank" value="SBIN" style="display: none;" onchange="updateBankSelection(this)">
-                                        <span style="font-size: 20px; margin-bottom: 4px;">🏛️</span>
-                                        <strong style="font-size: 13px; color: #0f172a;">State Bank of India</strong>
-                                    </label>
-
-                                    <label class="bank-select-card" style="border: 2px solid #cbd5e1; background: #ffffff; border-radius: 12px; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer; text-align: center; transition: all 0.2s;">
-                                        <input type="radio" name="selectedBank" value="ICIC" style="display: none;" onchange="updateBankSelection(this)">
-                                        <span style="font-size: 20px; margin-bottom: 4px;">🏛️</span>
-                                        <strong style="font-size: 13px; color: #0f172a;">ICICI Bank</strong>
-                                    </label>
-
-                                    <label class="bank-select-card" style="border: 2px solid #cbd5e1; background: #ffffff; border-radius: 12px; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer; text-align: center; transition: all 0.2s;">
-                                        <input type="radio" name="selectedBank" value="UTIB" style="display: none;" onchange="updateBankSelection(this)">
-                                        <span style="font-size: 20px; margin-bottom: 4px;">🏛️</span>
-                                        <strong style="font-size: 13px; color: #0f172a;">Axis Bank</strong>
-                                    </label>
-
-                                    <label class="bank-select-card" style="border: 2px solid #cbd5e1; background: #ffffff; border-radius: 12px; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer; text-align: center; transition: all 0.2s;">
-                                        <input type="radio" name="selectedBank" value="KKBK" style="display: none;" onchange="updateBankSelection(this)">
-                                        <span style="font-size: 20px; margin-bottom: 4px;">🏛️</span>
-                                        <strong style="font-size: 13px; color: #0f172a;">Kotak Bank</strong>
-                                    </label>
-
-                                    <label class="bank-select-card" style="border: 2px solid #cbd5e1; background: #ffffff; border-radius: 12px; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer; text-align: center; transition: all 0.2s;">
-                                        <input type="radio" name="selectedBank" value="PUNB" style="display: none;" onchange="updateBankSelection(this)">
-                                        <span style="font-size: 20px; margin-bottom: 4px;">🏛️</span>
-                                        <strong style="font-size: 13px; color: #0f172a;">Punjab National</strong>
-                                    </label>
-                                </div>
-
-                                <!-- All Banks Dropdown -->
-                                <div style="margin: 0 auto; text-align: left;">
-                                    <label for="allBanksSelect" style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">
-                                        Or choose another bank:
-                                    </label>
-                                    <select id="allBanksSelect" onchange="onOtherBankChange(this.value)" style="width: 100%; padding: 10px 12px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 600; background: #fff; cursor: pointer; box-sizing: border-box;">
-                                        <option value="">-- Select from 50+ Other Banks --</option>
-                                        <option value="BARB">Bank of Baroda</option>
-                                        <option value="CNRB">Canara Bank</option>
-                                        <option value="UBIN">Union Bank of India</option>
-                                        <option value="INDB">IndusInd Bank</option>
-                                        <option value="IBKL">IDBI Bank</option>
-                                        <option value="YESB">Yes Bank</option>
-                                        <option value="FDRL">Federal Bank</option>
-                                        <option value="BKID">Bank of India</option>
-                                        <option value="CBIN">Central Bank of India</option>
-                                        <option value="IDFB">IDFC FIRST Bank</option>
-                                        <option value="RATN">RBL Bank</option>
-                                        <option value="IOBA">Indian Overseas Bank</option>
-                                        <option value="MAHB">Bank of Maharashtra</option>
-                                        <option value="PSIB">Punjab & Sind Bank</option>
-                                        <option value="SIBL">South Indian Bank</option>
-                                        <option value="KARB">Karnataka Bank</option>
-                                        <option value="TMBL">Tamilnad Mercantile Bank</option>
-                                        <option value="DCBL">DCB Bank</option>
-                                        <option value="BDBL">Bandhan Bank</option>
-                                    </select>
-
-                                    <div style="margin-top: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #64748b; line-height: 1.4;">
-                                        🔒 When you click <strong>Place Order</strong>, your bank's secure Net Banking window will open to authorize the transfer.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 4. Cash on Delivery Info Box -->
+                        <!-- 3. Cash on Delivery Info Box -->
                         <div id="codPaymentForm" class="payment-form" style="display: none; padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; margin-top: 20px; text-align: center;">
                             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; max-width: 420px; margin: 0 auto; text-align: left;">
                                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
@@ -995,7 +855,6 @@
 
             // Sync wallet and bank QR codes if those forms are active
             renderWalletQR();
-            renderBankQR();
         }
 
         function renderWalletQR() {
@@ -1026,37 +885,6 @@
                 }
             } catch (err) {
                 qrWrapper.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&margin=2&data=${encodeURIComponent(upiUri)}" alt="Wallet QR" style="width:190px;height:190px;border-radius:8px;display:block;">`;
-            }
-        }
-
-        function renderBankQR() {
-            const qrWrapper = document.getElementById('bankQrWrapper');
-            const amountDisplay = document.getElementById('bankAmountDisplay');
-            const intentBtn = document.getElementById('bankIntentBtn');
-            if (!qrWrapper) return;
-
-            const totals = calculatePaymentTotals();
-            const formattedAmount = (Math.max(1, totals.total)).toFixed(2);
-            if (amountDisplay) amountDisplay.textContent = '₹' + totals.total.toLocaleString('en-IN');
-
-            const upiId = 'rakeshreddy056012-1@okaxis';
-            const upiName = 'Rakesh Reddy';
-            const note = 'EPRIS Bank Transfer';
-            const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(note)}`;
-
-            if (intentBtn) {
-                intentBtn.href = upiUri;
-                intentBtn.innerHTML = `📱 Tap to Pay ₹${totals.total.toLocaleString('en-IN')} via Bank UPI / Net Banking`;
-            }
-
-            try {
-                if (window.EprisInvoice && typeof window.EprisInvoice.generateQRSVG === 'function') {
-                    qrWrapper.innerHTML = window.EprisInvoice.generateQRSVG(upiUri, 180);
-                } else {
-                    qrWrapper.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=2&data=${encodeURIComponent(upiUri)}" alt="Bank Transfer QR" style="width:180px;height:180px;border-radius:8px;display:block;">`;
-                }
-            } catch (err) {
-                qrWrapper.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=2&data=${encodeURIComponent(upiUri)}" alt="Bank Transfer QR" style="width:180px;height:180px;border-radius:8px;display:block;">`;
             }
         }
 
@@ -1145,13 +973,6 @@
                 }
             }
 
-            const bankForm = document.getElementById('bankPaymentForm');
-            if (bankForm) {
-                bankForm.style.display = (type === 'bank') ? 'block' : 'none';
-                if (type === 'bank') {
-                    renderBankQR();
-                }
-            }
 
             const codForm = document.getElementById('codPaymentForm');
             if (codForm) codForm.style.display = (type === 'cod') ? 'block' : 'none';
@@ -1166,49 +987,6 @@
         }
 
         let walletPayMode = 'qr'; // 'qr' or 'gateway'
-        let bankPayMode = 'direct'; // 'direct' or 'gateway'
-
-        function switchWalletMode(mode) {
-            walletPayMode = mode;
-            const qrBtn = document.getElementById('walletModeQrBtn');
-            const gwBtn = document.getElementById('walletModeGatewayBtn');
-            const qrSec = document.getElementById('walletQrSection');
-            const gwSec = document.getElementById('walletGatewaySection');
-
-            if (mode === 'qr') {
-                if (qrBtn) { qrBtn.style.border = '2px solid #4f46e5'; qrBtn.style.background = '#eef2ff'; qrBtn.style.color = '#4338ca'; }
-                if (gwBtn) { gwBtn.style.border = '2px solid #cbd5e1'; gwBtn.style.background = '#ffffff'; gwBtn.style.color = '#475569'; }
-                if (qrSec) qrSec.style.display = 'block';
-                if (gwSec) gwSec.style.display = 'none';
-                renderWalletQR();
-            } else {
-                if (gwBtn) { gwBtn.style.border = '2px solid #4f46e5'; gwBtn.style.background = '#eef2ff'; gwBtn.style.color = '#4338ca'; }
-                if (qrBtn) { qrBtn.style.border = '2px solid #cbd5e1'; qrBtn.style.background = '#ffffff'; qrBtn.style.color = '#475569'; }
-                if (qrSec) qrSec.style.display = 'none';
-                if (gwSec) gwSec.style.display = 'block';
-            }
-        }
-
-        function switchBankMode(mode) {
-            bankPayMode = mode;
-            const directBtn = document.getElementById('bankModeDirectBtn');
-            const gwBtn = document.getElementById('bankModeGatewayBtn');
-            const directSec = document.getElementById('bankDirectSection');
-            const gwSec = document.getElementById('bankGatewaySection');
-
-            if (mode === 'direct') {
-                if (directBtn) { directBtn.style.border = '2px solid #4f46e5'; directBtn.style.background = '#eef2ff'; directBtn.style.color = '#4338ca'; }
-                if (gwBtn) { gwBtn.style.border = '2px solid #cbd5e1'; gwBtn.style.background = '#ffffff'; gwBtn.style.color = '#475569'; }
-                if (directSec) directSec.style.display = 'block';
-                if (gwSec) gwSec.style.display = 'none';
-                renderBankQR();
-            } else {
-                if (gwBtn) { gwBtn.style.border = '2px solid #4f46e5'; gwBtn.style.background = '#eef2ff'; gwBtn.style.color = '#4338ca'; }
-                if (directBtn) { directBtn.style.border = '2px solid #cbd5e1'; directBtn.style.background = '#ffffff'; directBtn.style.color = '#475569'; }
-                if (directSec) directSec.style.display = 'none';
-                if (gwSec) gwSec.style.display = 'block';
-            }
-        }
 
         // Card Formatting Helpers
         function formatCardNumber(input) {
@@ -1283,37 +1061,6 @@
             });
         }
 
-        // Net Banking Selection Helpers
-        let selectedBankCode = 'HDFC';
-        function updateBankSelection(radio) {
-            selectedBankCode = radio.value;
-            const otherSelect = document.getElementById('allBanksSelect');
-            if (otherSelect) otherSelect.value = '';
-            document.querySelectorAll('.bank-select-card').forEach(card => {
-                const r = card.querySelector('input[type="radio"]');
-                if (r && r.value === radio.value) {
-                    card.classList.add('selected');
-                    card.style.border = '2px solid #4f46e5';
-                    card.style.background = '#eef2ff';
-                } else {
-                    card.classList.remove('selected');
-                    card.style.border = '2px solid #cbd5e1';
-                    card.style.background = '#ffffff';
-                }
-            });
-        }
-
-        function onOtherBankChange(code) {
-            if (!code) return;
-            selectedBankCode = code;
-            document.querySelectorAll('.bank-select-card').forEach(card => {
-                card.classList.remove('selected');
-                card.style.border = '2px solid #cbd5e1';
-                card.style.background = '#ffffff';
-                const r = card.querySelector('input[type="radio"]');
-                if (r) r.checked = false;
-            });
-        }
 
         function nextStep(step) {
             if (step === 2 && !validateStep1()) return;
@@ -1434,25 +1181,6 @@
                     }
                     if (placeBtn) placeBtn.textContent = 'Pay ₹' + totals.total.toLocaleString('en-IN') + ' & Confirm Order';
                 }
-            } else if (selectedPayment === 'bank') {
-                if (bankPayMode === 'direct') {
-                    const utr = (document.getElementById('bankUtrInput')?.value || '').trim();
-                    document.getElementById('reviewPayment').innerHTML = `🏦 Net Banking - Direct Bank Transfer to Rakesh Reddy${utr ? '<br><small>Entered UTR / Ref: <strong>' + utr + '</strong></small>' : ''}`;
-                    if (noticeEl) {
-                        noticeEl.innerHTML = `<div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:10px 14px; color:#92400e; font-size:13px;">
-                            ⚠️ <strong>Payment Verification Notice:</strong> Your direct bank transfer reference will be verified by Rakesh against bank records before order confirmation. Status: <strong>Payment Verification Pending</strong>.
-                        </div>`;
-                    }
-                    if (placeBtn) placeBtn.textContent = 'Submit Order with Bank Reference';
-                } else {
-                    document.getElementById('reviewPayment').innerHTML = `🏦 Net Banking (${selectedBankCode}) - Online Gateway`;
-                    if (noticeEl) {
-                        noticeEl.innerHTML = `<div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 14px; color:#15803d; font-size:13px;">
-                            🔒 <strong>Secure Net Banking:</strong> You will authorize payment via ${selectedBankCode} Net Banking. If cancelled, no order will be placed.
-                        </div>`;
-                    }
-                    if (placeBtn) placeBtn.textContent = 'Pay ₹' + totals.total.toLocaleString('en-IN') + ' & Confirm Order';
-                }
             } else if (selectedPayment === 'card') {
                 document.getElementById('reviewPayment').innerHTML = '💳 Credit/Debit Card (256-Bit SSL Encrypted)';
                 if (noticeEl) {
@@ -1552,21 +1280,6 @@
                 }
             }
 
-            if (selectedPayment === 'bank') {
-                if (bankPayMode === 'direct') {
-                    const utr = (document.getElementById('bankUtrInput')?.value || '').trim();
-                    if (utr && utr.length < 8) {
-                        alert('Please enter a valid 12-digit Bank Transaction / UTR number from your bank transfer.');
-                        return false;
-                    }
-                } else {
-                    if (!selectedBankCode) {
-                        alert('Please select your bank for Net Banking');
-                        return false;
-                    }
-                }
-            }
-
             return true;
         }
 
@@ -1622,14 +1335,14 @@
             });
 
             if (!createRes || !createRes.order || !createRes.order.id) {
-                throw new Error('Could not initiate secure bank payment. Please try again or choose Cash on Delivery.');
+                throw new Error('Could not initiate secure payment. Please try again or choose Cash on Delivery.');
             }
 
             const rzOrder = createRes.order;
 
             return new Promise((resolve) => {
-                let prefillMethod = method === 'card' ? 'card' : (method === 'wallet' ? 'wallet' : 'netbanking');
-                let description = method === 'card' ? 'Credit/Debit Card Payment' : (method === 'wallet' ? 'Digital Wallet Payment' : 'Net Banking Transfer');
+                let prefillMethod = method === 'card' ? 'card' : 'wallet';
+                let description = method === 'card' ? 'Credit/Debit Card Payment' : 'Digital Wallet Payment';
 
                 const options = {
                     key: config.keyId,
@@ -1643,8 +1356,7 @@
                         contact: (method === 'wallet' ? (document.getElementById('walletMobileInput')?.value || address.phone) : address.phone),
                         email: localStorage.getItem('userEmail') || '',
                         method: prefillMethod,
-                        wallet: method === 'wallet' ? selectedWalletProvider : undefined,
-                        bank: method === 'bank' ? selectedBankCode : undefined
+                        wallet: method === 'wallet' ? selectedWalletProvider : undefined
                     },
                     theme: { color: '#0f172a' },
                     handler: async function (response) {
@@ -1848,75 +1560,7 @@
                 }
 
                 // -------------------------------------------------------------
-                // 4. NET BANKING (Direct Bank Transfer)
-                // -------------------------------------------------------------
-                if (selectedPayment === 'bank') {
-                    if (bankPayMode === 'direct') {
-                        let utr = (document.getElementById('bankUtrInput')?.value || '').trim();
-                        if (!utr || utr.length < 8) {
-                            utr = prompt('Please complete your bank transfer of ₹' + grandTotal.toLocaleString('en-IN') + ' to Rakesh Reddy, and enter the 12-digit Bank Transaction / UTR / IMPS Reference number from your receipt:');
-                            if (!utr || utr.trim().length < 8) {
-                                alert('❌ Order NOT placed. A valid 12-digit Bank Reference / UTR number is required.');
-                                return;
-                            }
-                        }
-
-                        const payload = {
-                            address,
-                            delivery: selectedDelivery,
-                            payment: {
-                                type: 'bank',
-                                status: 'pending_verification',
-                                providerPaymentId: utr.trim(),
-                                bankCode: selectedBankCode
-                            },
-                            couponCode: appliedCoupon ? appliedCoupon.code : '',
-                            items: totals.itemsToPay
-                        };
-
-                        const data = await apiRequest('/orders', {
-                            method: 'POST',
-                            body: JSON.stringify(payload)
-                        });
-
-                        finalizeOrder(data.order, totals.itemsToPay, '⏳ Order received! Your Direct Bank Transfer for ₹' + grandTotal.toLocaleString('en-IN') + ' (Ref: ' + utr.trim() + ') is submitted for verification.');
-                        return;
-                    } else {
-                        // Online Gateway
-                        const paymentResult = await launchRazorpayPayment(grandTotal, address, 'bank');
-                        if (!paymentResult || !paymentResult.paid) {
-                            alert('❌ Payment was not completed. Your order has NOT been placed and your cart is saved.');
-                            return;
-                        }
-
-                        const payload = {
-                            address,
-                            delivery: selectedDelivery,
-                            payment: {
-                                type: 'bank',
-                                status: 'paid',
-                                providerOrderId: paymentResult.orderId,
-                                providerPaymentId: paymentResult.paymentId,
-                                providerSignature: paymentResult.signature,
-                                bankCode: selectedBankCode,
-                                paidAt: new Date().toISOString()
-                            },
-                            couponCode: appliedCoupon ? appliedCoupon.code : '',
-                            items: totals.itemsToPay
-                        };
-
-                        const data = await apiRequest('/orders', {
-                            method: 'POST',
-                            body: JSON.stringify(payload)
-                        });
-
-                        finalizeOrder(data.order, totals.itemsToPay, '🎉 Net Banking Transfer Confirmed (' + selectedBankCode + ')! Your order has been placed.');
-                        return;
-                    }
-                }
-
-                // -------------------------------------------------------------
-                // 5. CREDIT / DEBIT CARD
+                // 4. CREDIT / DEBIT CARD
                 // -------------------------------------------------------------
                 if (selectedPayment === 'card') {
                     const paymentResult = await launchRazorpayPayment(grandTotal, address, 'card');
