@@ -36,7 +36,8 @@ const facebookAppId = String(process.env.FACEBOOK_APP_ID || '').trim();
 const googleOAuthClient = new OAuth2Client(googleClientId || undefined);
 
 app.use(cors({ origin: corsOrigin }));
-app.use(express.json());
+app.use(express.json({ limit: "15mb" }));
+app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 const frontendDir = path.join(__dirname, '..');
 app.use(express.static(frontendDir));
 app.use('/assets', express.static(path.join(__dirname, '../assets')));
@@ -1006,6 +1007,40 @@ function getProducts(database) {
 }
 
 // Admin: Products
+
+// ---------------------------------------------------------------------------
+// Image Upload for Catalog Products
+// ---------------------------------------------------------------------------
+app.post('/api/admin/upload', authenticate, requireAdmin, (req, res) => {
+    try {
+        const { filename, image } = req.body;
+        if (!image) return res.status(400).json({ message: 'No image data provided' });
+
+        const matches = image.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+        if (!matches) {
+            return res.json({ imageUrl: image });
+        }
+
+        const ext = matches[1] === 'jpeg' ? 'jpg' : (matches[1] || 'png');
+        const buffer = Buffer.from(matches[2], 'base64');
+        const cleanName = (filename || 'item').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const uniqueName = `product_${Date.now()}_${cleanName.slice(0, 16)}.${ext}`;
+
+        const uploadsDir = path.join(__dirname, '../assets/images');
+        if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+
+        const filePath = path.join(uploadsDir, uniqueName);
+        fs.writeFileSync(filePath, buffer);
+
+        res.json({ imageUrl: `assets/images/${uniqueName}` });
+    } catch (err) {
+        console.error('Image upload error:', err);
+        res.status(500).json({ message: 'Image upload failed: ' + err.message });
+    }
+});
+
 app.get('/api/admin/products', authenticate, requireAdmin, (req, res) => {
     const database = readDatabase();
     res.json({ products: getProducts(database) });
@@ -1027,7 +1062,10 @@ app.post('/api/admin/products', authenticate, requireAdmin, (req, res) => {
         inventory: Number(inventory || 0),
         image: String(image || '').trim(),
         description: String(description || '').trim(),
-        freeTrial: false
+        sizes: Array.isArray(req.body.sizes) && req.body.sizes.length ? req.body.sizes : ['S', 'M', 'L', 'XL'],
+        colors: Array.isArray(req.body.colors) && req.body.colors.length ? req.body.colors : ['Black', 'White'],
+        fitNote: String(req.body.fitNote || 'Regular fit. Model is wearing size M.').trim(),
+        freeTrial: req.body.freeTrial !== undefined ? Boolean(req.body.freeTrial) : true
     };
     allProducts.push(newProduct);
     database.products = allProducts;
@@ -1048,6 +1086,10 @@ app.patch('/api/admin/products/:id', authenticate, requireAdmin, (req, res) => {
     if (inventory != null) allProducts[index].inventory = Number(inventory);
     if (image != null) allProducts[index].image = String(image).trim();
     if (description != null) allProducts[index].description = String(description).trim();
+    if (req.body.sizes != null) allProducts[index].sizes = Array.isArray(req.body.sizes) ? req.body.sizes : ['S', 'M', 'L', 'XL'];
+    if (req.body.colors != null) allProducts[index].colors = Array.isArray(req.body.colors) ? req.body.colors : ['Black', 'White'];
+    if (req.body.fitNote != null) allProducts[index].fitNote = String(req.body.fitNote).trim();
+    if (req.body.freeTrial != null) allProducts[index].freeTrial = Boolean(req.body.freeTrial);
     database.products = allProducts;
     writeDatabase(database);
     res.json({ product: allProducts[index] });

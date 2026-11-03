@@ -14,7 +14,8 @@
       "email": "rakeshreddy7170@gmail.com",
       "phone": "7981512162",
       "passwordHash": "$2a$12$SJ63GmqRazb1kzZMasS.OesHgBFwJVrI.P1Bun3SnUKC2OJYajNHO",
-      "createdAt": "2026-09-06T17:57:49.558Z"
+      "createdAt": "2026-09-06T17:57:49.558Z",
+      "role": "admin"
     },
     {
       "id": "usr_1788718055905_rs5573",

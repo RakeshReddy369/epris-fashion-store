@@ -93,18 +93,134 @@
 
     <dialog id="productDialog" class="product-dialog">
         <form method="dialog" id="productForm" onsubmit="saveProduct(event)">
-            <div class="dialog-heading"><div><p class="admin-kicker">CATALOG EDITOR</p><h2 id="productDialogTitle">Add product</h2></div><button type="button" class="dialog-close" onclick="closeProductForm()">&times;</button></div>
-            <input type="hidden" id="productId">
-            <div class="admin-form-grid">
-                <label>Name<input id="productName" required></label>
-                <label>Category<input id="productCategory" required></label>
-                <label>Price (INR)<input id="productPrice" type="number" min="0" required></label>
-                <label>Original price (INR)<input id="productOriginalPrice" type="number" min="0" required></label>
-                <label>Inventory<input id="productInventory" type="number" min="0" required></label>
-                <label>Image URL<input id="productImage" type="url" required></label>
-                <label class="full-field">Description<textarea id="productDescription" rows="4" required></textarea></label>
+            <div class="dialog-heading">
+                <div>
+                    <p class="admin-kicker">CATALOG INVENTORY EDITOR</p>
+                    <h2 id="productDialogTitle">Add product</h2>
+                </div>
+                <button type="button" class="dialog-close" onclick="closeProductForm()">&times;</button>
             </div>
-            <div class="dialog-actions"><button type="button" class="admin-secondary" onclick="closeProductForm()">Cancel</button><button class="admin-primary" type="submit">Save product</button></div>
+            <input type="hidden" id="productId">
+
+            <div class="admin-form-grid">
+                <!-- Product Title -->
+                <label class="full-field">
+                    Product Name *
+                    <input id="productName" placeholder="e.g. Silk Satin Evening Gown / Oxford Cotton Shirt" required>
+                </label>
+
+                <!-- Category -->
+                <label>
+                    Category *
+                    <select id="productCategory" required style="width:100%; padding:11px; border:1px solid #d8dbe0; font:inherit; background:#fff; border-radius:4px;">
+                        <option value="Men">Men</option>
+                        <option value="Women">Women</option>
+                        <option value="Shoes">Shoes</option>
+                        <option value="Luxury Couture">Luxury Couture</option>
+                        <option value="Accessories">Accessories</option>
+                    </select>
+                </label>
+
+                <!-- Stock Quantity -->
+                <label>
+                    Stock Quantity (Inventory) *
+                    <input id="productInventory" type="number" min="0" placeholder="e.g. 50" required>
+                </label>
+
+                <!-- Selling Price -->
+                <label>
+                    Selling Price (₹ INR) *
+                    <input id="productPrice" type="number" min="0" placeholder="e.g. 1499" required>
+                </label>
+
+                <!-- Original / MRP Price -->
+                <label>
+                    Original MRP Price (₹ INR) *
+                    <input id="productOriginalPrice" type="number" min="0" placeholder="e.g. 2499" required>
+                </label>
+
+                <!-- Image Section (Upload from Device OR URL) -->
+                <div class="full-field" style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; padding:16px;">
+                    <span style="font-size:13px; font-weight:700; color:#0f172a; display:block; margin-bottom:8px;">
+                        📸 Product Photo *
+                    </span>
+                    
+                    <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap;">
+                        <!-- Image Preview Box -->
+                        <div id="productImagePreviewContainer" style="width:90px; height:90px; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
+                            <img id="productImagePreview" src="assets/images/placeholder.svg" alt="Preview" style="width:100%; height:100%; object-fit:cover;">
+                        </div>
+
+                        <div style="flex:1; min-width:240px; display:flex; flex-direction:column; gap:8px;">
+                            <!-- File Upload Button -->
+                            <div>
+                                <label style="display:inline-flex; align-items:center; gap:6px; background:#4f46e5; color:#ffffff; padding:8px 14px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">
+                                    📁 Upload Photo from Device
+                                    <input type="file" id="productImageFile" accept="image/*" onchange="handleProductImageUpload(this)" style="display:none;">
+                                </label>
+                                <span id="productUploadStatus" style="font-size:11px; color:#64748b; margin-left:8px;">JPG, PNG, WebP supported</span>
+                            </div>
+
+                            <!-- Or Image Path / URL -->
+                            <div>
+                                <input id="productImage" type="text" placeholder="Or enter image URL / path (e.g. assets/images/product-1.svg)" oninput="updateImagePreview(this.value)" required style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; box-sizing:border-box;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Sizes -->
+                <div class="full-field">
+                    <label style="display:block; margin-bottom:6px; font-weight:700; font-size:12px; color:#555b64;">
+                        Available Sizes:
+                    </label>
+                    <div id="sizeOptionsContainer" style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <label style="display:inline-flex; align-items:center; gap:4px; font-weight:600; font-size:13px; cursor:pointer; background:#f1f5f9; padding:6px 12px; border-radius:6px; border:1px solid #cbd5e1;">
+                            <input type="checkbox" name="productSize" value="XS"> XS
+                        </label>
+                        <label style="display:inline-flex; align-items:center; gap:4px; font-weight:600; font-size:13px; cursor:pointer; background:#f1f5f9; padding:6px 12px; border-radius:6px; border:1px solid #cbd5e1;">
+                            <input type="checkbox" name="productSize" value="S" checked> S
+                        </label>
+                        <label style="display:inline-flex; align-items:center; gap:4px; font-weight:600; font-size:13px; cursor:pointer; background:#f1f5f9; padding:6px 12px; border-radius:6px; border:1px solid #cbd5e1;">
+                            <input type="checkbox" name="productSize" value="M" checked> M
+                        </label>
+                        <label style="display:inline-flex; align-items:center; gap:4px; font-weight:600; font-size:13px; cursor:pointer; background:#f1f5f9; padding:6px 12px; border-radius:6px; border:1px solid #cbd5e1;">
+                            <input type="checkbox" name="productSize" value="L" checked> L
+                        </label>
+                        <label style="display:inline-flex; align-items:center; gap:4px; font-weight:600; font-size:13px; cursor:pointer; background:#f1f5f9; padding:6px 12px; border-radius:6px; border:1px solid #cbd5e1;">
+                            <input type="checkbox" name="productSize" value="XL" checked> XL
+                        </label>
+                        <label style="display:inline-flex; align-items:center; gap:4px; font-weight:600; font-size:13px; cursor:pointer; background:#f1f5f9; padding:6px 12px; border-radius:6px; border:1px solid #cbd5e1;">
+                            <input type="checkbox" name="productSize" value="XXL"> XXL
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Available Colors -->
+                <div class="full-field">
+                    <label style="display:block; margin-bottom:6px; font-weight:700; font-size:12px; color:#555b64;">
+                        Available Colors (comma-separated):
+                    </label>
+                    <input id="productColors" placeholder="e.g. Black, White, Navy Blue, Maroon" value="Black, White" style="width:100%; padding:10px 12px; border:1px solid #d8dbe0; border-radius:4px; box-sizing:border-box;">
+                </div>
+
+                <!-- Description -->
+                <label class="full-field">
+                    Description *
+                    <textarea id="productDescription" rows="3" placeholder="Fabric composition, fit style, care instructions..." required></textarea>
+                </label>
+
+                <!-- Fit Note -->
+                <label class="full-field">
+                    Fit & Model Recommendation
+                    <input id="productFitNote" placeholder="e.g. Regular fit. Model is 6'0'' wearing size M." value="Regular fit. Model is wearing size M.">
+                </label>
+            </div>
+
+            <div class="dialog-actions">
+                <button type="button" class="admin-secondary" onclick="closeProductForm()">Cancel</button>
+                <button class="admin-primary" type="submit">Save Product to Catalog</button>
+            </div>
         </form>
     </dialog>
 

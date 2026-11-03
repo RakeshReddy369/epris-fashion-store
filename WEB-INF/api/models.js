@@ -31,10 +31,13 @@ const productSchema = new mongoose.Schema({
     originalPrice: { type: Number, required: true, min: 0 },
     category: { type: String, required: true, index: true },
     image: { type: String, required: true },
+    images: { type: [String], default: [] },
     description: { type: String, required: true },
+    sizes: { type: [String], default: ['S', 'M', 'L', 'XL'] },
+    colors: { type: [String], default: ['Black', 'White'] },
     inventory: { type: Number, required: true, min: 0, default: 0 },
-    freeTrial: { type: Boolean, default: false },
-    fitNote: { type: String, default: '' }
+    freeTrial: { type: Boolean, default: true },
+    fitNote: { type: String, default: 'Regular fit. Model is wearing size M.' }
 });
 
 const cartItemSchema = new mongoose.Schema({

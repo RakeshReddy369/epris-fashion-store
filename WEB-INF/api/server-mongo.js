@@ -67,7 +67,8 @@ app.post('/api/webhooks/razorpay', express.raw({ type: 'application/json' }), as
     }
 });
 
-app.use(express.json());
+app.use(express.json({ limit: "15mb" }));
+app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 // Admin seed - accessible via GET or POST
 app.all('/api/admin/seed', async (req, res) => {
     try {
@@ -473,6 +474,40 @@ app.get('/api/products/:id', async (req, res, next) => {
 });
 
 // Admin management
+
+// ---------------------------------------------------------------------------
+// Image Upload for Catalog Products
+// ---------------------------------------------------------------------------
+app.post('/api/admin/upload', authenticate, requireAdmin, (req, res) => {
+    try {
+        const { filename, image } = req.body;
+        if (!image) return res.status(400).json({ message: 'No image data provided' });
+
+        const matches = image.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+        if (!matches) {
+            return res.json({ imageUrl: image });
+        }
+
+        const ext = matches[1] === 'jpeg' ? 'jpg' : (matches[1] || 'png');
+        const buffer = Buffer.from(matches[2], 'base64');
+        const cleanName = (filename || 'item').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const uniqueName = `product_${Date.now()}_${cleanName.slice(0, 16)}.${ext}`;
+
+        const uploadsDir = path.join(__dirname, '../assets/images');
+        if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+
+        const filePath = path.join(uploadsDir, uniqueName);
+        fs.writeFileSync(filePath, buffer);
+
+        res.json({ imageUrl: `assets/images/${uniqueName}` });
+    } catch (err) {
+        console.error('Image upload error:', err);
+        res.status(500).json({ message: 'Image upload failed: ' + err.message });
+    }
+});
+
 app.get('/api/admin/products', authenticate, requireAdmin, async (req, res, next) => {
     try {
         res.json({ products: await Product.find().sort({ id: 1 }).lean() });
@@ -488,8 +523,12 @@ app.post('/api/admin/products', authenticate, requireAdmin, async (req, res, nex
             return res.status(400).json({ message: 'Name, prices, category, image, and description are required' });
         }
         const lastProduct = await Product.findOne().sort({ id: -1 }).lean();
+        const sizes = Array.isArray(req.body.sizes) && req.body.sizes.length ? req.body.sizes : ['S', 'M', 'L', 'XL'];
+        const colors = Array.isArray(req.body.colors) && req.body.colors.length ? req.body.colors : ['Black', 'White'];
+        const fitNote = String(req.body.fitNote || 'Regular fit. Model is wearing size M.').trim();
+        const freeTrial = req.body.freeTrial !== undefined ? Boolean(req.body.freeTrial) : true;
         const product = await Product.create({
-            id: (lastProduct?.id || 0) + 1, name, price, originalPrice, category, image, description, inventory
+            id: (lastProduct?.id || 0) + 1, name, price, originalPrice, category, image, description, inventory, sizes, colors, fitNote, freeTrial
         });
         res.status(201).json({ product });
     } catch (error) {
@@ -499,7 +538,7 @@ app.post('/api/admin/products', authenticate, requireAdmin, async (req, res, nex
 
 app.patch('/api/admin/products/:id', authenticate, requireAdmin, async (req, res, next) => {
     try {
-        const allowedFields = ['name', 'price', 'originalPrice', 'category', 'image', 'description', 'inventory'];
+        const allowedFields = ['name', 'price', 'originalPrice', 'category', 'image', 'description', 'inventory', 'sizes', 'colors', 'fitNote', 'freeTrial'];
         const updates = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowedFields.includes(key)));
         const product = await Product.findOneAndUpdate({ id: Number(req.params.id) }, { $set: updates }, { new: true, runValidators: true }).lean();
         if (!product) return res.status(404).json({ message: 'Product not found' });
