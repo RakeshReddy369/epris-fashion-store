@@ -2931,6 +2931,11 @@ footer {
     background: #ede9fe;
     color: #5b21b6;
 }
+.order-status.payment-verification-pending {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
 .order-status.cancelled, .order-status.refunded, .order-status.payment-failed {
     background: #fee2e2;
     color: #991b1b;

@@ -868,35 +868,67 @@ app.post('/api/orders', authenticate, (req, res) => {
     const paymentType = payment && payment.type ? payment.type : 'cod';
     const isCod = paymentType === 'cod';
     const isUpi = paymentType === 'upi';
-    const isOnlinePayment = paymentType === 'card' || paymentType === 'wallet' || paymentType === 'bank';
+    const isCard = paymentType === 'card';
+    const isWallet = paymentType === 'wallet';
+    const isBank = paymentType === 'bank';
 
-    if (!isCod && !isUpi && !isOnlinePayment) {
+    if (!isCod && !isUpi && !isCard && !isWallet && !isBank) {
         return res.status(400).json({ message: 'Invalid payment method selected' });
     }
 
-    // Strict verification for Online Payments (Card / Wallet / Net Banking)
-    if (isOnlinePayment) {
+    let isPaid = false;
+    let orderStatus = 'Pending';
+    let paymentStatus = 'pending';
+
+    // 1. Credit / Debit Card (Must be cryptographically verified online)
+    if (isCard) {
         const { providerOrderId, providerPaymentId, providerSignature } = payment;
         if (!providerOrderId || !providerPaymentId || !providerSignature) {
-            return res.status(400).json({ message: 'Payment verification failed: Missing transaction authentication. Order cannot be placed without verified payment.' });
+            return res.status(400).json({ message: 'Payment verification failed: Missing card transaction authentication. Order cannot be placed without verified payment.' });
         }
         const isValid = verifyRazorpaySignature(providerOrderId, providerPaymentId, providerSignature);
         if (!isValid) {
             return res.status(400).json({ message: 'Payment verification failed: Invalid cryptographic bank signature. Order cannot be placed without verified payment.' });
         }
+        isPaid = true;
+        orderStatus = 'Confirmed';
+        paymentStatus = 'paid';
     }
-
-    // Strict verification for UPI Payments
-    if (isUpi) {
+    // 2. Digital Wallet (Amazon Pay, Mobikwik) & Net Banking (Direct Bank Transfer)
+    else if (isWallet || isBank) {
+        const { providerOrderId, providerPaymentId, providerSignature } = payment;
+        if (providerSignature && providerOrderId && providerPaymentId) {
+            const isValid = verifyRazorpaySignature(providerOrderId, providerPaymentId, providerSignature);
+            if (!isValid) {
+                return res.status(400).json({ message: 'Payment verification failed: Invalid cryptographic bank signature. Order cannot be placed without verified payment.' });
+            }
+            isPaid = true;
+            orderStatus = 'Confirmed';
+            paymentStatus = 'paid';
+        } else if (providerPaymentId && String(providerPaymentId).trim().length >= 6) {
+            isPaid = false;
+            orderStatus = 'Payment Verification Pending';
+            paymentStatus = 'pending_verification';
+        } else {
+            return res.status(400).json({ message: 'Payment verification failed: A valid 12-digit transaction UTR reference or completed gateway payment is required before your order can be placed.' });
+        }
+    }
+    // 3. Dynamic UPI QR (Rakesh)
+    else if (isUpi) {
         const utr = payment && (payment.providerPaymentId || payment.utrNumber);
         if (!utr || String(utr).trim().length < 6) {
             return res.status(400).json({ message: 'Please provide a valid 12-digit UPI UTR / Reference number from your payment receipt.' });
         }
+        isPaid = false;
+        orderStatus = 'Payment Verification Pending';
+        paymentStatus = 'pending_verification';
     }
-
-    const isPaid = isOnlinePayment;
-    const orderStatus = isOnlinePayment ? 'Confirmed' : (isCod ? 'Confirmed' : 'Payment Verification Pending');
-    const paymentStatus = isOnlinePayment ? 'paid' : (isCod ? 'pending' : 'pending_verification');
+    // 4. Cash on Delivery (COD)
+    else if (isCod) {
+        isPaid = false;
+        orderStatus = 'Confirmed';
+        paymentStatus = 'pending';
+    }
 
     const order = {
         id: createId('ord'),
@@ -909,6 +941,8 @@ app.post('/api/orders', authenticate, (req, res) => {
             status: paymentStatus,
             providerOrderId: payment.providerOrderId || null,
             providerPaymentId: payment.providerPaymentId || payment.utrNumber || (isPaid ? ('PAY_' + Date.now()) : null),
+            walletProvider: payment.walletProvider || undefined,
+            bankCode: payment.bankCode || undefined,
             paidAt: isPaid ? (payment.paidAt || new Date().toISOString()) : null
         },
         subtotal,

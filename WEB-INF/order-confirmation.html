@@ -34,9 +34,10 @@
     <section class="confirmation-section">
         <div class="confirmation-container">
             <div class="confirmation-content">
-                <div class="success-icon">✅</div>
-                <h1>Order Confirmed!</h1>
-                <p class="confirmation-message">Thank you for your purchase</p>
+                <div class="success-icon" id="confirmStatusIcon">✅</div>
+                <h1 id="confirmHeading">Order Confirmed!</h1>
+                <p class="confirmation-message" id="confirmSubtitle">Thank you for your purchase</p>
+                <div id="verificationNoticeBanner" style="display: none; background: #fffbeb; border: 2px solid #fde68a; border-radius: 14px; padding: 18px 20px; margin: 20px 0; text-align: left;"></div>
 
                 <div class="order-confirmation-details">
                     <div class="detail-item">
@@ -121,19 +122,19 @@
                 <div class="order-tracking">
                     <h3>Order Status</h3>
                     <div class="tracking-steps">
-                        <div class="tracking-step completed">
-                            <span class="step-circle">✓</span>
-                            <p>Order Confirmed</p>
+                        <div class="tracking-step" id="trackingStep1">
+                            <span class="step-circle" id="trackingStep1Icon">✓</span>
+                            <p id="trackingStep1Label">Order Confirmed</p>
                         </div>
-                        <div class="tracking-step">
+                        <div class="tracking-step" id="trackingStep2">
                             <span class="step-circle">📦</span>
                             <p>Processing</p>
                         </div>
-                        <div class="tracking-step">
+                        <div class="tracking-step" id="trackingStep3">
                             <span class="step-circle">🚚</span>
                             <p>On the Way</p>
                         </div>
-                        <div class="tracking-step">
+                        <div class="tracking-step" id="trackingStep4">
                             <span class="step-circle">📍</span>
                             <p>Delivered</p>
                         </div>
@@ -316,18 +317,87 @@
             }
             document.getElementById('confirmPayment').textContent = paymentText;
 
-            // If UPI pending verification, display note
-            if (order.status === 'Payment Verification Pending') {
-                const trackCard = document.querySelector('.confirmation-card p');
-                if (trackCard) {
-                    trackCard.innerHTML = '<span style="color:#d97706; font-weight:700;">⏳ Your UPI payment (UTR: ' + (order.payment?.providerPaymentId || '') + ') is being verified by Rakesh.</span><br>' + trackCard.innerHTML;
+            const isPendingVerification = order.status === 'Payment Verification Pending' || (order.payment && order.payment.status === 'pending_verification');
+            const isCod = paymentType === 'cod';
+            const isPaid = (order.payment && order.payment.status === 'paid') || order.status === 'Delivered';
+
+            const statusIconEl = document.getElementById('confirmStatusIcon');
+            const headingEl = document.getElementById('confirmHeading');
+            const subtitleEl = document.getElementById('confirmSubtitle');
+            const bannerEl = document.getElementById('verificationNoticeBanner');
+            const step1Label = document.getElementById('trackingStep1Label');
+            const step1Icon = document.getElementById('trackingStep1Icon');
+
+            if (isPendingVerification) {
+                if (statusIconEl) {
+                    statusIconEl.textContent = '⏳';
+                    statusIconEl.style.background = '#fef3c7';
+                    statusIconEl.style.color = '#d97706';
+                    statusIconEl.style.border = '2px solid #fde68a';
                 }
+                if (headingEl) headingEl.textContent = 'Order Placed — Payment Verification Pending';
+                if (subtitleEl) subtitleEl.textContent = 'Your order request has been received and is awaiting payment verification.';
+                
+                const utr = order.payment?.providerPaymentId || '';
+                if (bannerEl) {
+                    bannerEl.style.display = 'block';
+                    bannerEl.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                            <span style="font-size:24px;">⏳</span>
+                            <strong style="font-size:16px; color:#92400e;">Payment Verification in Progress</strong>
+                            <span style="background:#fef3c7; color:#92400e; font-size:11px; font-weight:700; padding:2px 8px; border-radius:9999px; border:1px solid #fde68a;">AWAITING CONFIRMATION</span>
+                        </div>
+                        <p style="font-size:13px; color:#78350f; margin:0 0 8px; line-height:1.5;">
+                            We received your payment submission for <strong>₹${total.toLocaleString('en-IN')}</strong> via <strong>${paymentText}</strong>.
+                            ${utr ? `<br>Transaction Reference / UTR: <strong style="font-family:monospace; background:#fef3c7; padding:2px 6px; border-radius:4px; font-size:13px; border:1px solid #fde68a;">${utr}</strong>` : ''}
+                        </p>
+                        <p style="font-size:12px; color:#92400e; margin:0; line-height:1.5;">
+                            🔍 <strong>Next Step:</strong> Rakesh is verifying this transaction with Google Pay / bank records. As soon as payment is confirmed, your order status will automatically change to <strong>Confirmed</strong> and preparation for shipping will begin.
+                        </p>
+                    `;
+                }
+
+                if (step1Label) step1Label.textContent = 'Verification Pending';
+                if (step1Icon) step1Icon.textContent = '⏳';
+            } else if (isCod) {
+                if (statusIconEl) {
+                    statusIconEl.textContent = '📦';
+                    statusIconEl.style.background = '#f0fdf4';
+                    statusIconEl.style.color = '#16a34a';
+                }
+                if (headingEl) headingEl.textContent = 'Order Confirmed (Cash on Delivery)';
+                if (subtitleEl) subtitleEl.textContent = 'Your order is confirmed! Please have ₹' + total.toLocaleString('en-IN') + ' ready in cash or UPI when your parcel arrives.';
+                if (bannerEl) bannerEl.style.display = 'none';
+                if (step1Label) step1Label.textContent = 'Order Placed (COD)';
+                if (step1Icon) step1Icon.textContent = '✓';
+            } else {
+                if (statusIconEl) {
+                    statusIconEl.textContent = '✅';
+                    statusIconEl.style.background = '#f0fdf4';
+                    statusIconEl.style.color = '#16a34a';
+                }
+                if (headingEl) headingEl.textContent = 'Order Confirmed & Paid!';
+                if (subtitleEl) subtitleEl.textContent = 'Thank you for your purchase. Your payment of ₹' + total.toLocaleString('en-IN') + ' has been confirmed.';
+                if (bannerEl) bannerEl.style.display = 'none';
+                if (step1Label) step1Label.textContent = 'Order Confirmed';
+                if (step1Icon) step1Icon.textContent = '✓';
             }
 
             // Live order tracking state
             const currentStatus = order.status || 'Pending';
-            const statusLevels = { 'Pending': 1, 'Confirmed': 1, 'Processing': 2, 'Shipped': 3, 'Delivered': 4 };
-            const level = statusLevels[currentStatus] || 1;
+            let level = 1;
+            if (isPendingVerification) {
+                level = 1; // Step 1 is in progress
+            } else if (currentStatus === 'Confirmed') {
+                level = 2; // Step 1 done, step 2 active
+            } else if (currentStatus === 'Processing') {
+                level = 2;
+            } else if (currentStatus === 'Shipped') {
+                level = 3;
+            } else if (currentStatus === 'Delivered') {
+                level = 4;
+            }
+
             const stepEls = document.querySelectorAll('.tracking-steps .tracking-step');
             stepEls.forEach((el, i) => {
                 el.classList.remove('completed', 'active');
