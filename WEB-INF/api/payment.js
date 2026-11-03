@@ -7,8 +7,8 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 // Razorpay payment helper
 // ---------------------------------------------------------------------------
 
-const keyId     = process.env.RAZORPAY_KEY_ID     || '';
-const keySecret = process.env.RAZORPAY_KEY_SECRET  || '';
+const keyId     = process.env.RAZORPAY_KEY_ID     || 'rzp_test_TvDOh0kaCItKFM';
+const keySecret = process.env.RAZORPAY_KEY_SECRET  || 'Fb7znuMJiXAjRAA35FJZ5Cml';
 const isConfigured = !!(keyId && keySecret && !keyId.includes('your_'));
 
 let razorpay = null;

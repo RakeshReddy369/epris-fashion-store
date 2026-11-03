@@ -1317,110 +1317,92 @@
                 config = await apiRequest('/payment/config');
             } catch (e) {
                 console.warn('Cannot reach payment config:', e.message);
+                throw new Error('Payment gateway is currently unreachable. Please check your internet connection or choose Cash on Delivery / UPI QR.');
             }
 
             const isConfigured = config && config.configured && config.keyId && !config.keyId.includes('your_');
 
-            if (isConfigured && typeof window.Razorpay !== 'undefined') {
-                try {
-                    const createRes = await apiRequest('/payment/create-order', {
-                        method: 'POST',
-                        body: JSON.stringify({ amount: grandTotal })
-                    });
-
-                    if (createRes && createRes.order && createRes.order.id) {
-                        const rzOrder = createRes.order;
-
-                        return new Promise((resolve) => {
-                            let prefillMethod = method === 'card' ? 'card' : (method === 'wallet' ? 'wallet' : 'netbanking');
-                            let description = method === 'card' ? 'Credit/Debit Card Payment' : (method === 'wallet' ? 'Digital Wallet Payment' : 'Net Banking Transfer');
-
-                            const options = {
-                                key: config.keyId,
-                                amount: rzOrder.amount,
-                                currency: rzOrder.currency || 'INR',
-                                name: 'EPRIS Fashion Store',
-                                description,
-                                order_id: rzOrder.id,
-                                prefill: {
-                                    name: (method === 'card' ? (document.getElementById('cardHolderName')?.value || address.name) : address.name),
-                                    contact: (method === 'wallet' ? (document.getElementById('walletMobileInput')?.value || address.phone) : address.phone),
-                                    email: localStorage.getItem('userEmail') || '',
-                                    method: prefillMethod,
-                                    wallet: method === 'wallet' ? selectedWalletProvider : undefined,
-                                    bank: method === 'bank' ? selectedBankCode : undefined
-                                },
-                                theme: { color: '#0f172a' },
-                                handler: async function (response) {
-                                    try {
-                                        const verifyRes = await apiRequest('/payment/verify', {
-                                            method: 'POST',
-                                            body: JSON.stringify({
-                                                razorpay_order_id: response.razorpay_order_id,
-                                                razorpay_payment_id: response.razorpay_payment_id,
-                                                razorpay_signature: response.razorpay_signature
-                                            })
-                                        });
-
-                                        if (verifyRes && verifyRes.verified) {
-                                            resolve({
-                                                paid: true,
-                                                orderId: response.razorpay_order_id,
-                                                paymentId: response.razorpay_payment_id,
-                                                signature: response.razorpay_signature
-                                            });
-                                        } else {
-                                            alert('Payment signature could not be verified by bank.');
-                                            resolve({ paid: false });
-                                        }
-                                    } catch (err) {
-                                        alert('Payment verification error: ' + err.message + '. No order was placed.');
-                                        resolve({ paid: false });
-                                    }
-                                },
-                                modal: {
-                                    ondismiss: function () {
-                                        resolve({ paid: false });
-                                    }
-                                }
-                            };
-
-                            const rzp = new window.Razorpay(options);
-                            rzp.on('payment.failed', function (resp) {
-                                alert('Payment failed: ' + (resp.error ? resp.error.description : 'Transaction declined') + '. No order was placed.');
-                                resolve({ paid: false });
-                            });
-                            rzp.open();
-                        });
-                    }
-                } catch (err) {
-                    console.warn('Razorpay order creation fallback:', err.message);
-                }
+            if (!isConfigured) {
+                throw new Error('Online payment gateway is temporarily unavailable. Please select Cash on Delivery or UPI QR Code.');
             }
 
-            // Fallback for Test / Demo environment if live gateway popup is offline
-            return new Promise((resolve) => {
-                let promptMsg = '';
-                if (method === 'card') {
-                    const cardNum = document.getElementById('cardNumber')?.value || '•••• 1234';
-                    promptMsg = `💳 Bank 3D Secure Simulation:\n\nA test OTP was sent to your registered mobile for Card ending in ${cardNum.slice(-4)}.\n\nClick OK to simulate approving this ₹${grandTotal} payment (or Cancel to abort):`;
-                } else if (method === 'wallet') {
-                    const walletName = selectedWalletProvider === 'amazonpay' ? 'Amazon Pay' : (selectedWalletProvider === 'mobikwik' ? 'Mobikwik' : selectedWalletProvider.toUpperCase());
-                    promptMsg = `💰 ${walletName} Wallet Simulation:\n\nAuthorize payment of ₹${grandTotal} from your ${walletName} balance?\n\nClick OK to confirm payment:`;
-                } else if (method === 'bank') {
-                    promptMsg = `🏦 Net Banking Simulation (${selectedBankCode}):\n\nYou are connected to ${selectedBankCode} secure portal.\n\nClick OK to authorize transfer of ₹${grandTotal}:`;
-                }
+            if (typeof window.Razorpay === 'undefined') {
+                throw new Error('Payment gateway library is not loaded. Please check your internet connection or select Cash on Delivery.');
+            }
 
-                if (confirm(promptMsg)) {
-                    resolve({
-                        paid: true,
-                        orderId: 'SIM_ORD_' + Date.now(),
-                        paymentId: 'SIM_PAY_' + method.toUpperCase() + '_' + Date.now(),
-                        signature: 'simulated_verified_sig'
-                    });
-                } else {
+            // Create real Razorpay order on server
+            const createRes = await apiRequest('/payment/create-order', {
+                method: 'POST',
+                body: JSON.stringify({ amount: grandTotal })
+            });
+
+            if (!createRes || !createRes.order || !createRes.order.id) {
+                throw new Error('Could not initiate secure bank payment. Please try again or choose Cash on Delivery.');
+            }
+
+            const rzOrder = createRes.order;
+
+            return new Promise((resolve) => {
+                let prefillMethod = method === 'card' ? 'card' : (method === 'wallet' ? 'wallet' : 'netbanking');
+                let description = method === 'card' ? 'Credit/Debit Card Payment' : (method === 'wallet' ? 'Digital Wallet Payment' : 'Net Banking Transfer');
+
+                const options = {
+                    key: config.keyId,
+                    amount: rzOrder.amount,
+                    currency: rzOrder.currency || 'INR',
+                    name: 'EPRIS Fashion Store',
+                    description,
+                    order_id: rzOrder.id,
+                    prefill: {
+                        name: (method === 'card' ? (document.getElementById('cardHolderName')?.value || address.name) : address.name),
+                        contact: (method === 'wallet' ? (document.getElementById('walletMobileInput')?.value || address.phone) : address.phone),
+                        email: localStorage.getItem('userEmail') || '',
+                        method: prefillMethod,
+                        wallet: method === 'wallet' ? selectedWalletProvider : undefined,
+                        bank: method === 'bank' ? selectedBankCode : undefined
+                    },
+                    theme: { color: '#0f172a' },
+                    handler: async function (response) {
+                        try {
+                            const verifyRes = await apiRequest('/payment/verify', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+
+                            if (verifyRes && verifyRes.verified) {
+                                resolve({
+                                    paid: true,
+                                    orderId: response.razorpay_order_id,
+                                    paymentId: response.razorpay_payment_id,
+                                    signature: response.razorpay_signature
+                                });
+                            } else {
+                                alert('❌ Payment signature could not be verified by bank. No order was placed.');
+                                resolve({ paid: false });
+                            }
+                        } catch (err) {
+                            alert('❌ Payment verification error: ' + err.message + '. No order was placed.');
+                            resolve({ paid: false });
+                        }
+                    },
+                    modal: {
+                        ondismiss: function () {
+                            alert('⚠️ Payment cancelled: The payment window was closed without completing payment. Your order has NOT been placed and your cart is saved.');
+                            resolve({ paid: false });
+                        }
+                    }
+                };
+
+                const rzp = new window.Razorpay(options);
+                rzp.on('payment.failed', function (resp) {
+                    alert('❌ Payment failed: ' + (resp.error ? resp.error.description : 'Transaction was declined by bank') + '. No order was placed.');
                     resolve({ paid: false });
-                }
+                });
+                rzp.open();
             });
         }
 

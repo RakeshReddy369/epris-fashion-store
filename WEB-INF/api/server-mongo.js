@@ -894,20 +894,38 @@ app.post('/api/orders', authenticate, async (req, res, next) => {
         }
 
         const total = Math.max(0, subtotal - discount + tax + shipping);
-        const isPaid = payment && payment.status === 'paid';
-        const isCod = payment && payment.type === 'cod';
-        const isUpiPending = payment && payment.type === 'upi';
+        const paymentType = payment && payment.type ? payment.type : 'cod';
+        const isCod = paymentType === 'cod';
+        const isUpi = paymentType === 'upi';
+        const isOnlinePayment = paymentType === 'card' || paymentType === 'wallet' || paymentType === 'bank';
 
-        if (!isPaid && !isCod && !isUpiPending) {
-            return res.status(400).json({ message: 'Order cannot be placed without completed payment or Cash on Delivery' });
+        if (!isCod && !isUpi && !isOnlinePayment) {
+            return res.status(400).json({ message: 'Invalid payment method selected' });
         }
 
-        if (isUpiPending && (!payment.providerPaymentId || String(payment.providerPaymentId).trim().length < 6)) {
-            return res.status(400).json({ message: 'Please provide a valid 12-digit UPI UTR / Reference number' });
+        // Strict verification for Online Payments (Card / Wallet / Net Banking)
+        if (isOnlinePayment) {
+            const { providerOrderId, providerPaymentId, providerSignature } = payment;
+            if (!providerOrderId || !providerPaymentId || !providerSignature) {
+                return res.status(400).json({ message: 'Payment verification failed: Missing transaction authentication. Order cannot be placed without verified payment.' });
+            }
+            const isValid = verifyRazorpaySignature(providerOrderId, providerPaymentId, providerSignature);
+            if (!isValid) {
+                return res.status(400).json({ message: 'Payment verification failed: Invalid cryptographic bank signature. Order cannot be placed without verified payment.' });
+            }
         }
 
-        const orderStatus = isPaid ? 'Confirmed' : (isCod ? 'Confirmed' : 'Payment Verification Pending');
-        const paymentStatus = isPaid ? 'paid' : (isCod ? 'pending' : 'pending_verification');
+        // Strict verification for UPI Payments
+        if (isUpi) {
+            const utr = payment && (payment.providerPaymentId || payment.utrNumber);
+            if (!utr || String(utr).trim().length < 6) {
+                return res.status(400).json({ message: 'Please provide a valid 12-digit UPI UTR / Reference number from your payment receipt.' });
+            }
+        }
+
+        const isPaid = isOnlinePayment;
+        const orderStatus = isOnlinePayment ? 'Confirmed' : (isCod ? 'Confirmed' : 'Payment Verification Pending');
+        const paymentStatus = isOnlinePayment ? 'paid' : (isCod ? 'pending' : 'pending_verification');
 
         const order = await Order.create({
             id: createId('ord'),
